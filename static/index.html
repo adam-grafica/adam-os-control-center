@@ -2,115 +2,234 @@
 <html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
 <title>ADAM OS · Control Center</title>
 <style>
-:root{--bg:#f4f5f7;--surface:#fff;--navy:#0f172a;--text:#1e293b;--text2:#64748b;--border:#e2e8f0;--shadow:0 1px 3px rgba(0,0,0,.06)}
+:root{--bg:#f4f5f7;--surface:#fff;--navy:#0f172a;--text:#1e293b;--text2:#64748b;--border:#e2e8f0;--shadow:0 1px 3px rgba(0,0,0,.06);--blue:#2563eb;--blue-l:#3b82f6;--green:#10b981;--amber:#f59e0b;--pink:#ec4899;--cyan:#06b6d4;--orange:#f97316;--ff:'Inter',-apple-system,sans-serif;--ffm:'SF Mono',Consolas,monospace;--radius:8px;--gap:12px}
 [data-theme="dark"]{--bg:#0f1117;--surface:#181b26;--navy:#0c0d14;--text:#e2e8f0;--text2:#7e8a9b;--border:#262938;--shadow:0 1px 3px rgba(0,0,0,.2)}
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-size:13px;line-height:1.5;transition:background .2s,color .2s}
-.hdr{background:var(--navy);color:#fff;padding:0 24px;height:52px;display:flex;align-items:center;gap:32px;position:sticky;top:0;z-index:100}
-.hdr-logo{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
-.hdr-logo span{color:#3b82f6}.hdr-logo small{font-weight:400;font-size:10px;color:#94a3b8;margin-left:4px}
-.theme-toggle{margin-left:auto;background:none;border:1px solid #2a2d3a;color:#94a3b8;width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px}
-.theme-toggle:hover{background:rgba(255,255,255,.08);color:#fff}
-.nav{display:flex;gap:4px;flex:1}
-.nav a{padding:6px 14px;border-radius:6px;color:#94a3b8;text-decoration:none;font-size:12px;font-weight:500;cursor:pointer;transition:.15s}
+*{margin:0;padding:0;box-sizing:border-box;min-width:0}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:var(--ff);line-height:1.5;transition:background .2s,color .2s;overflow-x:hidden}
+
+/* ─── HEADER ─── */
+.hdr{background:var(--navy);color:#fff;padding:0 var(--gap);height:48px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
+.hdr-logo{font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.hdr-logo span{color:var(--blue)}.hdr-logo small{font-weight:400;font-size:9px;color:#94a3b8}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:4px}
+.theme-btn{background:none;border:1px solid #2a2d3a;color:#94a3b8;width:34px;height:34px;border-radius:var(--radius);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.theme-btn:active{background:rgba(255,255,255,.12)}
+.menu-btn{display:none;background:none;border:1px solid #2a2d3a;color:#94a3b8;width:34px;height:34px;border-radius:var(--radius);cursor:pointer;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.menu-btn:active{background:rgba(255,255,255,.12)}
+
+/* ─── NAV ─── */
+.nav{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.nav::-webkit-scrollbar{display:none}
+.nav a{padding:6px 12px;border-radius:6px;color:#94a3b8;text-decoration:none;font-size:12px;font-weight:500;cursor:pointer;transition:.1s;white-space:nowrap}
+.nav a:active{opacity:.7}
 .nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
-.nav a.active{color:#fff;background:#2563eb}
-.wrap{max-width:1400px;margin:0 auto;padding:20px 24px}
+.nav a.active{color:#fff;background:var(--blue)}
+
+/* ─── LAYOUT ─── */
+.wrap{max-width:1440px;margin:0 auto;padding:var(--gap)}
 .section{display:none}.section.active{display:block}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;box-shadow:var(--shadow)}
-.stat .n{font-size:22px;font-weight:700;line-height:1.2}
-.stat .l{font-size:11px;color:var(--text2);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;font-weight:500}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
-.card h3{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text)}
-.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:200;justify-content:center;align-items:center}
+
+/* ─── STATS ─── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:var(--gap)}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;box-shadow:var(--shadow)}
+.stat .n{font-size:20px;font-weight:700;line-height:1.1}
+.stat .l{font-size:10px;color:var(--text2);margin-top:2px;text-transform:uppercase;letter-spacing:.3px;font-weight:500}
+@media(min-width:600px){
+ .stat .n{font-size:24px}
+ .stat .l{font-size:11px}
+}
+
+/* ─── CARDS ─── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:var(--gap)}
+.card h3{font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)}
+@media(min-width:600px){
+ .card{padding:18px}
+ .card h3{font-size:14px}
+}
+
+/* ─── MODAL ─── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;justify-content:center;align-items:flex-end}
 .modal-overlay.show{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:800px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.modal-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.modal-hdr h4{font-size:14px;font-weight:600}
-.modal-hdr .close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;padding:4px}
-.modal-body{padding:16px 20px;overflow:auto;flex:1}
-.modal-body textarea{width:100%;min-height:300px;font-family:'SF Mono',Consolas,monospace;font-size:12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:12px;resize:vertical;outline:none}
-.modal-body textarea:focus{border-color:#3b82f6}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--border)}
-.modal-actions button{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none}
-.modal-actions .save{background:#2563eb;color:#fff}
-.modal-actions .save:hover{background:#3b82f6}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 0 0;width:100%;max-width:800px;max-height:90dvh;display:flex;flex-direction:column;box-shadow:0 -4px 40px rgba(0,0,0,.3);margin:0 auto}
+@media(min-width:768px){
+ .modal-overlay{align-items:center}
+ .modal{border-radius:12px;max-height:85vh}
+}
+.modal-hdr{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.modal-hdr h4{font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modal-hdr .close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:22px;padding:4px 8px;border-radius:6px}
+.modal-hdr .close:active{background:var(--border)}
+.modal-body{padding:12px 16px;overflow:auto;flex:1;-webkit-overflow-scrolling:touch}
+.modal-body textarea{width:100%;min-height:200px;font-family:var(--ffm);font-size:11px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:10px;resize:vertical;outline:none}
+.modal-body textarea:focus{border-color:var(--blue)}
+.modal-actions{display:flex;gap:6px;justify-content:flex-end;padding:10px 16px;border-top:1px solid var(--border)}
+.modal-actions button{padding:10px 18px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;min-height:40px}
+.modal-actions .save{background:var(--blue);color:#fff}
+.modal-actions .save:active{opacity:.8}
 .modal-actions .cancel{background:var(--bg);color:var(--text2)}
-/* Tree explorer */
-.tree-ul{list-style:none;padding-left:0;margin:0}
-.tree-li{padding:2px 0}
-.tree-toggle{cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:4px;font-size:12px;transition:.1s}
-.tree-toggle:hover{background:var(--border)}
-.tree-toggle .ic{width:16px;text-align:center;flex-shrink:0;font-size:10px}
-.tree-toggle .icon-file{color:var(--text2);font-size:12px}
-.tree-toggle .icon-folder{color:#f59e0b}
-.tree-toggle .icon-folder-open{color:#f59e0b}
-.tree-children{padding-left:20px;display:none}
+
+/* ─── TREE ─── */
+.tree-ul{list-style:none;padding:0;margin:0}
+.tree-li{padding:1px 0}
+.tree-toggle{cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 6px;border-radius:4px;font-size:12px;transition:.1s;min-height:28px}
+.tree-toggle:active{background:var(--border)}
+.tree-toggle .ic{width:14px;text-align:center;flex-shrink:0;font-size:9px}
+.tree-children{padding-left:16px;display:none}
 .tree-children.open{display:block}
-.tree-file{cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:4px;font-size:12px;color:var(--text);transition:.1s}
-.tree-file:hover{background:var(--border);color:var(--blue)}
-.tree-file .ex{font-size:9px;color:var(--text2);margin-left:2px}
-.explorer-panel{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:900px){.explorer-panel{grid-template-columns:1fr}}
-.file-list{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:var(--shadow)}
-.file-list .item{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:12px}
-.file-list .item:hover{background:var(--border)}
-.file-list .item .nm{flex:1}.file-list .item .sz{color:var(--text2);font-size:10px}
-.file-list .item .dt{color:var(--text2);font-size:10px}
-/* Agent cards */
-.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
-.agent-card .ahdr{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.agent-card .abadge{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;border:2px solid}
-.agent-card .title{font-weight:600;font-size:15px}.agent-card .role{font-size:11px;color:var(--text2)}
-.agent-card .path{font-size:10px;color:var(--text2);font-family:monospace;background:var(--bg);padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px}
-.bu-block{background:var(--bg);border-radius:8px;padding:12px;margin-bottom:10px}
-.bu-block .bd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.bu-block .bname{font-weight:600;font-size:13px}.bu-block .bpath{font-size:10px;color:var(--text2);font-family:monospace}
+.tree-file{cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 6px;border-radius:4px;font-size:12px;color:var(--text);transition:.1s;min-height:28px}
+.tree-file:active{background:var(--border);color:var(--blue)}
+.tree-file .ex{font-size:8px;color:var(--text2);margin-left:2px}
+
+/* ─── EXPLORER ─── */
+.explorer-wrap{display:grid;grid-template-columns:1fr;gap:var(--gap)}
+@media(min-width:768px){.explorer-wrap{grid-template-columns:1fr 1fr}}
+.tree-panel,.detail-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px;overflow:auto;max-height:65dvh;box-shadow:var(--shadow)}
+@media(min-width:1024px){.tree-panel,.detail-panel{max-height:75vh}}
+
+/* ─── AGENTS ─── */
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:var(--gap);box-shadow:var(--shadow)}
+.agent-card .ahdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.agent-card .abadge{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;border:2px solid;flex-shrink:0}
+.agent-card .title{font-weight:600;font-size:14px}
+.agent-card .role{font-size:11px;color:var(--text2)}
+.agent-card .path{font-size:10px;color:var(--text2);font-family:var(--ffm);background:var(--bg);padding:2px 6px;border-radius:4px;display:inline-block;margin-top:3px;word-break:break-all}
+.bu-block{background:var(--bg);border-radius:var(--radius);padding:10px;margin-bottom:8px}
+.bu-block .bd{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.bu-block .bname{font-weight:600;font-size:13px}
+.bu-block .bpath{font-size:9px;color:var(--text2);font-family:var(--ffm);word-break:break-all}
 .depts{display:flex;flex-wrap:wrap;gap:6px}
-.dept-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;flex:1;min-width:150px}
-.dept-card .dnm{font-weight:500;font-size:12px}
-.dept-card .dpath{font-size:9px;color:var(--text2);font-family:monospace;margin:2px 0}
-.dept-card .emp{font-size:11px;padding:1px 0}
+.dept-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px;flex:1;min-width:130px}
+@media(min-width:1200px){.dept-card{min-width:170px}}
+@media(min-width:768px) and (max-width:1199px){.dept-card{min-width:140px}}
+.dept-card .dnm{font-weight:500;font-size:11px}
+.dept-card .dpath{font-size:8px;color:var(--text2);font-family:var(--ffm);margin:2px 0;word-break:break-all}
+.dept-card .emp{font-size:11px;padding:2px 0}
+.dept-card .emp a{color:var(--blue-l);cursor:pointer;text-decoration:none}
+.dept-card .emp a:active{opacity:.7}
 .dept-card .emp-none{font-size:10px;color:var(--text2);font-style:italic}
-.dept-card .emp a{color:var(--blue-l);cursor:pointer;text-decoration:none;border-bottom:1px dotted transparent}
-.dept-card .emp a:hover{border-bottom-color:var(--blue-l)}
-.ftr{text-align:center;padding:16px;font-size:10px;color:var(--text2);border-top:1px solid var(--border);margin-top:32px}
+.file-list{padding:0}
+.file-list .fi{display:flex;align-items:center;gap:6px;padding:4px 4px;border-radius:4px;cursor:pointer;font-size:11px;min-height:28px}
+.file-list .fi:active{background:var(--border)}
+.file-list .fi .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-list .fi .sz{color:var(--text2);font-size:9px;white-space:nowrap}
+.file-list .fi .dt{color:var(--text2);font-size:9px;white-space:nowrap}
+
+/* ─── CHAT ─── */
+.chat-box{max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch;margin-bottom:10px}
+.chat-msg{padding:8px 0 6px;border-bottom:1px solid var(--border);font-size:12px}
+.chat-msg .sender{font-size:11px;font-weight:600}
+.chat-msg .text{color:var(--text);margin:2px 0}
+.chat-msg .time{font-size:10px;color:var(--text2)}
+.chat-input{display:flex;gap:6px}
+.chat-input input{flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;outline:none;background:var(--surface);color:var(--text);min-height:40px}
+.chat-input input:focus{border-color:var(--blue)}
+.chat-input button{padding:10px 16px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-weight:500;cursor:pointer;min-height:40px;font-size:13px}
+.chat-input button:active{opacity:.8}
+
+/* ─── TV (1920px+) ─── */
+@media(min-width:1920px){
+ html{font-size:18px}
+ .wrap{max-width:1800px;padding:24px 32px}
+ .stats{gap:16px}
+ .stat{padding:16px 20px}
+ .stat .n{font-size:28px}
+ .stat .l{font-size:12px}
+ .card{padding:24px}
+ .card h3{font-size:16px}
+ .agent-card{padding:20px}
+ .agent-card .title{font-size:16px}
+ .agent-card .role{font-size:13px}
+ .tree-toggle,.tree-file{font-size:14px;padding:6px 10px;min-height:36px}
+ .dept-card{padding:12px;min-width:200px}
+ .dept-card .dnm{font-size:13px}
+ .dept-card .emp{font-size:12px}
+ .modal{max-width:1000px}
+ .modal-body textarea{font-size:13px;min-height:350px}
+ .hdr{height:60px;padding:0 32px}
+ .hdr-logo{font-size:18px}
+ .nav a{font-size:14px;padding:8px 16px}
+ .chat-input input,.chat-input button{min-height:48px;font-size:15px}
+ .file-list .fi{font-size:13px;min-height:36px}
+ .chat-msg{font-size:14px}
+ .chat-msg .sender,.chat-msg .time{font-size:12px}
+}
+
+/* ─── MOBILE NAV DRAWER ─── */
+@media(max-width:767px){
+ .nav{display:none;position:fixed;top:48px;left:0;width:100%;background:var(--navy);flex-direction:column;padding:4px;z-index:99;gap:2px;border-top:1px solid #1e293b}
+ .nav.open{display:flex}
+ .nav a{padding:12px 16px;border-radius:6px;font-size:14px;width:100%}
+ .menu-btn{display:flex}
+ .hdr-logo small{display:none}
+ .wrap{padding:8px}
+ .stats{grid-template-columns:repeat(2,1fr);gap:6px}
+ .stat{padding:8px 10px}
+ .stat .n{font-size:17px}
+ .tree-children{padding-left:12px}
+ .tree-panel,.detail-panel{max-height:50dvh}
+ .explorer-wrap{grid-template-columns:1fr}
+ .dept-card{min-width:100%}
+ .modal-hdr h4{font-size:12px}
+ .modal-body textarea{min-height:150px}
+}
+
+/* ─── TABLET ─── */
+@media(min-width:768px) and (max-width:1023px){
+ .dept-card{min-width:150px}
+ .stats{grid-template-columns:repeat(3,1fr)}
+ .tree-panel,.detail-panel{max-height:55dvh}
+}
+
+/* ─── UTILITIES ─── */
+.ftr{text-align:center;padding:12px;font-size:10px;color:var(--text2);border-top:1px solid var(--border);margin-top:20px}
+@media(min-width:1920px){.ftr{font-size:12px;padding:20px}}
+.dbl{display:grid;grid-template-columns:1fr;gap:var(--gap)}@media(min-width:768px){.dbl{grid-template-columns:1fr 1fr}}
+.scan-badge{font-size:10px;color:var(--text2);font-family:var(--ffm)}@media(min-width:1920px){.scan-badge{font-size:12px}}
+.hier-node{display:flex;align-items:center;gap:6px;margin:2px 0;flex-wrap:wrap}
+.hier-node .lvl1{padding-left:20px}.hier-node .lvl2{padding-left:38px}.hier-node .lvl3{padding-left:56px}
+@media(max-width:767px){.hier-node .lvl2{padding-left:16px}.hier-node .lvl3{padding-left:32px}}
 </style>
 </head>
 <body>
 
 <header class="hdr">
+ <button class="menu-btn" onclick="toggleMenu()" id="menuBtn" aria-label="Menú">☰</button>
  <div class="hdr-logo"><span>▲</span> ADAM OS <small>v0.0.2</small></div>
- <nav class="nav">
-  <a class="active" onclick="go('dash')">Dashboard</a>
-  <a onclick="go('explore')">Archivos</a>
-  <a onclick="go('agents')">Agentes</a>
-  <a onclick="go('chat')">Chat</a>
+ <nav class="nav" id="topNav">
+  <a data-tab="dash" class="active" onclick="go('dash')">Dashboard</a>
+  <a data-tab="explore" onclick="go('explore')">Archivos</a>
+  <a data-tab="agents" onclick="go('agents')">Agentes</a>
+  <a data-tab="chat" onclick="go('chat')">Chat</a>
  </nav>
- <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Tema">🌙</button>
+ <div class="hdr-right">
+  <span style="color:#94a3b8;font-size:12px;display:none" class="nav-status" id="navStatus">●</span>
+  <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Tema">🌙</button>
+ </div>
 </header>
 
 <div class="wrap">
  <div class="section active" id="sec-dash">
   <div class="stats" id="statsRow"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="dbl">
    <div class="card"><h3>🏛️ Jerarquía del Sistema</h3><div id="hierTree"></div></div>
-   <div class="card"><h3>📂 Últimos Archivos</h3><div id="recentFiles"></div></div>
+   <div class="card"><h3>📂 Archivos Recientes</h3><div id="recentFiles" class="file-list"></div></div>
   </div>
  </div>
 
  <div class="section" id="sec-explore">
-  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
-   <h3 style="flex:1;font-size:14px;font-weight:600">📁 Filesystem Explorer</h3>
-   <span id="scanPath" style="font-size:10px;color:var(--text2);font-family:monospace"></span>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+   <h3 style="font-size:14px;font-weight:600;margin:0;flex:1">📁 Filesystem Explorer</h3>
+   <span class="scan-badge" id="scanPath"></span>
   </div>
-  <div class="explorer-panel">
-   <div class="card" style="overflow:auto;max-height:70vh" id="explorerTree"></div>
-   <div class="file-list" id="fileDetail" style="overflow:auto;max-height:70vh"></div>
+  <div class="explorer-wrap">
+   <div class="tree-panel" id="explorerTree"></div>
+   <div class="detail-panel" id="fileDetail">
+    <div style="color:var(--text2);text-align:center;padding:30px 10px;font-size:12px">Selecciona un archivo para verlo</div>
+   </div>
   </div>
  </div>
 
@@ -121,10 +240,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sa
  <div class="section" id="sec-chat">
   <div class="card">
    <h3>💬 Command Center Chat</h3>
-   <div class="chat-box" id="chatBox" style="max-height:400px;overflow-y:auto;margin-bottom:12px"></div>
-   <div style="display:flex;gap:8px">
-    <input id="chatInput" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:var(--surface);color:var(--text)" placeholder="Mensaje..." onkeydown="if(event.key==='Enter')sendChat()">
-    <button onclick="sendChat()" style="padding:8px 16px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:500;cursor:pointer">Enviar</button>
+   <div class="chat-box" id="chatBox"></div>
+   <div class="chat-input">
+    <input id="chatInput" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button onclick="sendChat()">Enviar</button>
    </div>
   </div>
  </div>
@@ -133,9 +252,12 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sa
 <footer class="ftr">ADAM OS · Control Center — Construyendo el imperio codo a codo</footer>
 
 <!-- FILE EDITOR MODAL -->
-<div class="modal-overlay" id="fileModal">
+<div class="modal-overlay" id="fileModal" onclick="if(event.target===this)closeModal()">
  <div class="modal">
-  <div class="modal-hdr"><h4 id="modalTitle">Editar Archivo</h4><button class="close" onclick="closeModal()">✕</button></div>
+  <div class="modal-hdr">
+   <h4 id="modalTitle">Editando archivo</h4>
+   <button class="close" onclick="closeModal()">✕</button>
+  </div>
   <div class="modal-body"><textarea id="modalContent" spellcheck="false"></textarea></div>
   <div class="modal-actions">
    <button class="cancel" onclick="closeModal()">Cancelar</button>
@@ -145,8 +267,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sa
 </div>
 
 <script>
-const API='/api';
-const TS='theme';
+const TS='theme',API='/api';
 let S={agents:[],tree:null,stats:{}};
 let currentFile=null;
 
@@ -162,16 +283,26 @@ function initTheme(){
  if(s){document.documentElement.setAttribute('data-theme',s);document.getElementById('themeBtn').textContent=s==='dark'?'🌙':'☀️';}
 }
 
+function toggleMenu(){
+ document.getElementById('topNav').classList.toggle('open');
+}
+
 function go(s){
- document.querySelectorAll('.section,.nav a').forEach(e=>e.classList.remove('active'));
+ document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));
  document.getElementById('sec-'+s).classList.add('active');
- ['dash','explore','agents','chat'].forEach((n,i)=>{if(n===s)document.querySelectorAll('.nav a')[i].classList.add('active')});
+ document.querySelectorAll('.nav a').forEach(e=>{
+  e.classList.remove('active');
+  if(e.dataset.tab===s)e.classList.add('active');
+ });
+ document.getElementById('topNav').classList.remove('open');
 }
 
 async function loadAll(){
- const d=await fetch(API+'/scan').then(r=>r.json());
- S=d;
- renderAll();
+ try{
+  const d=await fetch(API+'/scan').then(r=>r.json());
+  S=d;
+  renderAll();
+ }catch(e){console.error(e)}
 }
 
 function renderAll(){renderStats();renderTree();renderAgentCards();renderExplorer();renderRecentFiles()}
@@ -179,128 +310,125 @@ function renderAll(){renderStats();renderTree();renderAgentCards();renderExplore
 // STATS
 function renderStats(){
  const st=S.stats||{};
- document.getElementById('statsRow').innerHTML=`
- <div class="stat"><div class="n" style="color:#3b82f6">${st.agents||0}</div><div class="l">Agentes</div></div>
- <div class="stat"><div class="n" style="color:#f59e0b">${st.business_units||0}</div><div class="l">Unidades</div></div>
- <div class="stat"><div class="n" style="color:#10b981">${st.departments||0}</div><div class="l">Departamentos</div></div>
- <div class="stat"><div class="n" style="color:#06b6d4">${st.employees||0}</div><div class="l">Empleados</div></div>
- <div class="stat"><div class="n" style="color:#f97316">${st.agents?st.agents*3:0}</div><div class="l">AGENTS.md</div></div>`;
- if(st.scanned_at) document.getElementById('scanPath').textContent='🕒 '+st.scanned_at;
+ document.getElementById('statsRow').innerHTML=
+  '<div class="stat"><div class="n" style="color:var(--blue)">'+(st.agents||0)+'</div><div class="l">Agentes</div></div>'+
+  '<div class="stat"><div class="n" style="color:var(--amber)">'+(st.business_units||0)+'</div><div class="l">Unidades</div></div>'+
+  '<div class="stat"><div class="n" style="color:var(--green)">'+(st.departments||0)+'</div><div class="l">Departamentos</div></div>'+
+  '<div class="stat"><div class="n" style="color:var(--cyan)">'+(st.employees||0)+'</div><div class="l">Empleados</div></div>'
+  +(st.scanned_at?'<div class="stat"><div class="n" style="font-size:13px;color:var(--text2)">🕒</div><div class="l" style="font-size:9px">'+st.scanned_at+'</div></div>':'');
 }
 
 // HIERARCHY TREE
 function renderTree(){
  const agents=S.agents||[];
- let html='<div style="display:flex;flex-direction:column;gap:4px">';
- // Simple hierarchy display
  const order=['AXON','HERMES','Axon-Life','Axon-Work','Axon-Music'];
- order.forEach(name=>{
-  const a=agents.find(x=>x.name===name);
+ let h='<div style="font-size:12px">';
+ order.forEach((on,i)=>{
+  const a=agents.find(x=>x.name===on);
   if(!a)return;
-  html+=`<div style="display:flex;align-items:center;gap:6px;margin:2px 0"><span style="color:${a.color||'#3b82f6'};font-weight:600;">${a.name}</span><span style="font-size:10px;color:var(--text2)">📁 ${a.relative}</span></div>`;
+  const c=a.color||'var(--blue)';
+  const lvl=i===0?'':i===1?'lvl1':'lvl2';
+  h+='<div class="hier-node"><span class="'+lvl+'"><span style="color:'+c+';font-weight:600;font-size:13px">'+a.name+'</span> <span style="font-size:10px;color:var(--text2);font-family:var(--ffm)">📁'+a.relative+'</span></span></div>';
   (a.business_units||[]).forEach(u=>{
-   html+=`<div style="padding-left:24px;margin:2px 0"><span style="font-weight:500;font-size:12px;color:${u.color||'#f59e0b'}">${u.short_name}</span> <span style="font-size:10px;color:var(--text2)">${u.relative}</span></div>`;
+   h+='<div class="hier-node"><span class="lvl3"><span style="font-weight:500;font-size:12px;color:'+(u.color||'var(--amber)')+'">'+u.short_name+'</span> <span style="font-size:9px;color:var(--text2);font-family:var(--ffm)">'+u.relative+'</span></span></div>';
    (u.departments||[]).forEach(d=>{
-    const ec=(d.employees||[]).length?`<span style="color:var(--green);font-size:10px">👥${ec}</span>`:'<span style="color:var(--text2);font-size:10px;font-style:italic">vacío</span>';
-    html+=`<div style="padding-left:44px;font-size:11px;display:flex;gap:4px;margin:1px 0"><span style="color:var(--text2)">📂 ${d.dir_name}/</span>${ec}</div>`;
+    const ec=(d.employees||[]).length?'<span style="color:var(--green);font-size:10px"> 👥'+(d.employees||[]).length+'</span>':'<span style="color:var(--text2);font-size:10px;font-style:italic"> vacío</span>';
+    h+='<div class="hier-node"><span class="lvl3" style="font-size:10px;padding-left:56px;display:flex;gap:2px"><span style="color:var(--text2)">📂 '+d.dir_name+'/</span>'+ec+'</span></div>';
    });
   });
  });
- html+='</div>';
- document.getElementById('hierTree').innerHTML=html;
+ h+='</div>';
+ document.getElementById('hierTree').innerHTML=h;
 }
 
 // FILE EXPLORER
 function renderExplorer(){
- if(!S.tree){document.getElementById('explorerTree').innerHTML='<div style="color:var(--text2)">Cargando...</div>';return}
+ if(!S.tree){document.getElementById('explorerTree').innerHTML='<div style="color:var(--text2);padding:20px 0">Cargando...</div>';return}
  document.getElementById('explorerTree').innerHTML=renderTreeNode(S.tree,'');
- document.getElementById('fileDetail').innerHTML='<div style="color:var(--text2);text-align:center;padding:40px">Selecciona un archivo para ver su contenido</div>';
 }
 
 function renderTreeNode(node,path){
  if(!node||!node.children)return'';
  const isRoot=!node.relative;
- const label=isRoot?'📁 adam-os-system':`📂 ${node.name}`;
- const hasChildren=(node.children||[]).length>0||(node.files||[]).length>0;
- const display=node.relative||'root';
  let html='';
  if(isRoot){
-  html+=`<ul class="tree-ul"><li class="tree-li"><span class="tree-toggle open" onclick="toggleNode(this)"><span class="ic">▼</span><span class="icon-folder-open">📁</span><b>adam-os-system/</b></span><div class="tree-children open">`;
+  html='<ul class="tree-ul"><li class="tree-li"><span class="tree-toggle open" onclick="toggleNode(this)"><span class="ic">▼</span><span class="icon-folder-open" style="color:var(--amber)">📁</span><b>adam-os-system/</b></span><div class="tree-children open">';
  } else {
-  html+=`<li class="tree-li"><span class="tree-toggle" onclick="toggleNode(this)"><span class="ic">▶</span>${node.has_agents?'🤖':'📂'}<span style="margin-left:2px">${node.name}/</span></span><div class="tree-children">`;
+  html='<li class="tree-li"><span class="tree-toggle" onclick="toggleNode(this)"><span class="ic">▶</span>'+(node.has_agents?'🤖':'📂')+'<span style="margin-left:2px">'+node.name+'/</span></span><div class="tree-children">';
  }
- // Children directories
- (node.children||[]).forEach(c=>{
-  html+=renderTreeNode(c,path+'/'+c.name);
- });
- // Files
+ (node.children||[]).forEach(c=>{html+=renderTreeNode(c,path+'/'+c.name)});
  (node.files||[]).forEach(f=>{
   const rel=f.relative||(path?path+'/'+f.name:f.name);
-  html+=`<li class="tree-li" style="padding-left:20px"><span class="tree-file" onclick="openFile('${rel}')"><span class="icon-file">📄</span>${f.name}<span class="ex">(${(f.size/1024).toFixed(1)}KB)</span></span></li>`;
+  const sz=f.size>1024?(f.size/1024).toFixed(1)+'KB':f.size+'B';
+  html+='<li class="tree-li" style="padding-left:20px"><span class="tree-file" onclick="openFile(''+rel+'')"><span style="font-size:12px">📄</span>'+f.name+'<span class="ex">('+sz+')</span></span></li>';
  });
- if(!isRoot)html+=`</div></li>`;
- else html+=`</div></li></ul>`;
+ if(!isRoot)html+='</div></li>';else html+='</div></li></ul>';
  return html;
 }
 
 function toggleNode(el){
- const ic=el.querySelector('.ic');
- const ch=el.nextElementSibling;
- if(ch.classList.contains('open')){
-  ch.classList.remove('open');ic.textContent='▶';
- } else {
-  ch.classList.add('open');ic.textContent='▼';
- }
+ const ic=el.querySelector('.ic'),ch=el.nextElementSibling;
+ ch.classList.toggle('open');
+ ic.textContent=ch.classList.contains('open')?'▼':'▶';
 }
 
 // FILE VIEWER / EDITOR
 async function openFile(relPath){
- const d=await fetch(API+'/fs/read?path='+encodeURIComponent(relPath)).then(r=>r.json());
- if(d.error){
-  document.getElementById('fileDetail').innerHTML=`<div style="padding:20px;color:var(--pink)">❌ ${d.error}</div>`;
-  return;
- }
- currentFile=relPath;
- // Show in detail panel
- const lang=d.name.endsWith('.md')?'markdown':d.name.endsWith('.py')?'python':d.name.endsWith('.json')?'json':d.name.endsWith('.yaml')||d.name.endsWith('.yml')?'yaml':'text';
- document.getElementById('fileDetail').innerHTML=`
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-   <div><b style="font-size:13px">📄 ${d.name}</b><br><span style="font-size:10px;color:var(--text2)">${d.relative} · ${(d.size/1024).toFixed(1)}KB · mod ${d.modified}</span></div>
-   <button onclick="editFile()" style="padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;color:var(--text)">✏️ Editar</button>
-  </div>
-  <div style="background:var(--bg);border-radius:8px;padding:12px;font-family:'SF Mono',Consolas,monospace;font-size:11px;white-space:pre-wrap;overflow:auto;max-height:500px">${escHtml(d.content)}</div>`;
+ try{
+  const d=await fetch(API+'/fs/read?path='+encodeURIComponent(relPath)).then(r=>r.json());
+  if(d.error){
+   document.getElementById('fileDetail').innerHTML='<div style="padding:20px;color:var(--pink);font-size:12px">❌ '+d.error+'</div>';
+   return;
+  }
+  currentFile=relPath;
+  const sz=d.size>1024?(d.size/1024).toFixed(1)+'KB':d.size+'B';
+  document.getElementById('fileDetail').innerHTML=
+   '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap">'+
+    '<div style="min-width:0"><b style="font-size:13px">📄 '+d.name+'</b><br><span style="font-size:10px;color:var(--text2);word-break:break-all">'+d.relative+' · '+sz+' · mod '+d.modified+'</span></div>'+
+    '<button onclick="editFile()" style="padding:8px 14px;background:var(--bg);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;color:var(--text);white-space:nowrap;min-height:36px">✏️ Editar</button>'+
+   '</div>'+
+   '<div style="background:var(--bg);border-radius:6px;padding:10px;font-family:var(--ffm);font-size:11px;white-space:pre-wrap;overflow:auto;max-height:55vh;-webkit-overflow-scrolling:touch">'+escHtml(d.content)+'</div>';
+  // On mobile, scroll to detail panel
+  if(window.innerWidth<768){
+   document.getElementById('fileDetail').scrollIntoView({behavior:'smooth'});
+  }
+ }catch(e){console.error(e)}
 }
 
 function editFile(){
  if(!currentFile)return;
- document.getElementById('modalTitle').textContent='✏️ Editando: '+currentFile;
+ document.getElementById('modalTitle').textContent='✏️ '+currentFile;
  loadModalContent(currentFile);
  document.getElementById('fileModal').classList.add('show');
+ document.body.style.overflow='hidden';
 }
 
 async function loadModalContent(path){
- const d=await fetch(API+'/fs/read?path='+encodeURIComponent(path)).then(r=>r.json());
- if(!d.error) document.getElementById('modalContent').value=d.content;
+ try{
+  const d=await fetch(API+'/fs/read?path='+encodeURIComponent(path)).then(r=>r.json());
+  if(!d.error) document.getElementById('modalContent').value=d.content;
+ }catch(e){}
 }
 
 async function saveFile(){
  const content=document.getElementById('modalContent').value;
- const r=await fetch(API+'/fs/write',{
-  method:'POST',
-  headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({path:currentFile,content})
- }).then(r=>r.json());
- if(r.success){
-  closeModal();
-  openFile(currentFile);
- } else alert('Error: '+r.error);
+ try{
+  const r=await fetch(API+'/fs/write',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({path:currentFile,content})
+  }).then(r=>r.json());
+  if(r.success){
+   closeModal();openFile(currentFile);
+  }else alert('Error: '+r.error);
+ }catch(e){alert('Error al guardar');}
 }
 
 function closeModal(){
  document.getElementById('fileModal').classList.remove('show');
+ document.body.style.overflow='';
 }
 
-// AGENTS PAGE
+// AGENTS
 function renderAgentCards(){
  const agents=S.agents||[];
  const order=['AXON','HERMES','Axon-Life','Axon-Work','Axon-Music'];
@@ -308,16 +436,14 @@ function renderAgentCards(){
  order.forEach(on=>{
   const a=agents.find(x=>x.name===on);
   if(!a)return;
-  const c=a.color||'#3b82f6';
-  html+=`<div class="agent-card"><div class="ahdr"><div class="abadge" style="color:${c};border-color:${c}">${a.name[0]}</div><div><div class="title" style="color:${c}">${a.name}</div><div class="role">${a.role}</div><div class="path">📁 ${a.relative}</div></div></div>`;
+  const c=a.color||'var(--blue)';
+  html+='<div class="agent-card"><div class="ahdr"><div class="abadge" style="color:'+c+';border-color:'+c+'">'+a.name[0]+'</div><div style="min-width:0"><div class="title" style="color:'+c+'">'+a.name+'</div><div class="role">'+a.role+'</div><div class="path">📁 '+a.relative+'</div></div></div>';
   (a.business_units||[]).forEach(u=>{
    const depts=(u.departments||[]).map(d=>{
-    const emps=(d.employees||[]).map(e=>`<div class="emp">👤 ${e.name} <span style="color:var(--text2)">— ${e.role}</span></div>`).join('');
-    const hasMD=(d.files||[]).filter(f=>f.name==='AGENTS.md').length>0;
-    const extFiles=(d.files||[]).filter(f=>f.name!=='AGENTS.md').map(f=>`<span class="tree-file" onclick="openFile('${d.relative+'/'+f.name}')" style="display:inline;font-size:10px">📄 ${f.name}</span>`).join(' ');
-    return `<div class="dept-card"><div class="dnm">📂 ${d.dir_name}/</div><div class="dpath">${d.relative}</div>${emps||'<div class="emp-none">Sin empleados</div>'}${hasMD?`<div style="margin-top:4px"><span class="tree-file" onclick="openFile('${d.relative}/AGENTS.md')" style="display:inline;font-size:10px">🤖 AGENTS.md</span></div>`:''}${extFiles?`<div style="margin-top:2px">${extFiles}</div>`:''}</div>`;
+    const emps=(d.employees||[]).map(e=>'<div class="emp">👤 '+e.name+' <span style="color:var(--text2)">— '+e.role+'</span></div>').join('');
+    return '<div class="dept-card"><div class="dnm">📂 '+d.dir_name+'/</div><div class="dpath">'+d.relative+'</div>'+(emps||'<div class="emp-none">Sin empleados</div>')+'</div>';
    }).join('');
-   html+=`<div class="bu-block"><div class="bd"><span class="bname" style="color:${u.color||'#f59e0b'}">${u.name}</span><span class="bpath">${u.relative}</span></div><div class="depts">${depts}</div></div>`;
+   html+='<div class="bu-block"><div class="bd"><span class="bname" style="color:'+(u.color||'var(--amber)')+'">'+u.name+'</span><span class="bpath">'+u.relative+'</span></div><div class="depts">'+depts+'</div></div>';
   });
   html+='</div>';
  });
@@ -332,33 +458,38 @@ function renderRecentFiles(){
   (node.children||[]).forEach(walk);
  }
  if(S.tree)walk(S.tree);
- allFiles.sort((a,b)=>a.name.localeCompare(b.name));
- document.getElementById('recentFiles').innerHTML='<div style="display:flex;flex-direction:column;gap:4px">'+
-  allFiles.slice(0,30).map(f=>`<div style="display:flex;align-items:center;gap:6px;padding:2px 4px;border-radius:4px;cursor:pointer;font-size:11px" onclick="openFile('${f.rel}')"><span>📄</span><span style="flex:1">${f.rel}</span><span style="font-size:10px;color:var(--text2)">${(f.size/1024).toFixed(1)}KB</span></div>`).join('')+
- '</div>';
+ allFiles.sort((a,b)=>a.rel.localeCompare(b.rel));
+ const list=document.getElementById('recentFiles');
+ list.innerHTML=allFiles.slice(0,40).map(f=>
+  '<div class="fi" onclick="openFile(''+f.rel+'')"><span>📄</span><span class="nm">'+f.rel+'</span><span class="sz">'+(f.size>1024?(f.size/1024).toFixed(1)+'KB':f.size+'B')+'</span></div>'
+ ).join('')||'<div style="color:var(--text2);padding:20px 0;text-align:center">Sin archivos</div>';
 }
 
 // CHAT
 async function renderChat(){
- const msgs=await fetch(API+'/chat?since_id='+(window._chatId||0)).then(r=>r.json());
- if(!msgs.length)return;
- window._chatId=msgs[msgs.length-1].id;
- const box=document.getElementById('chatBox');
- msgs.forEach(m=>{box.innerHTML+=`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px"><b style="font-size:11px">${m.agent_name||m.sender||'User'}</b><div style="color:var(--text);margin:2px 0">${m.message||m.text}</div><div style="font-size:10px;color:var(--text2)">${m.timestamp||''}</div></div>`});
- box.scrollTop=box.scrollHeight;
+ try{
+  const msgs=await fetch(API+'/chat?since_id='+(window._cid||0)).then(r=>r.json());
+  if(!msgs.length)return;
+  window._cid=msgs[msgs.length-1].id;
+  const b=document.getElementById('chatBox');
+  msgs.forEach(m=>{
+   b.innerHTML+='<div class="chat-msg"><div class="sender">'+(m.agent_name||m.sender||'User')+'</div><div class="text">'+escHtml(m.message||m.text)+'</div><div class="time">'+(m.timestamp||'')+'</div></div>';
+  });
+  b.scrollTop=b.scrollHeight;
+ }catch(e){}
 }
 async function sendChat(){
  const inp=document.getElementById('chatInput');
  const t=inp.value.trim();
  if(!t)return;
  inp.value='';
- await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender:'Natch',message:t})});
- renderChat();
+ try{
+  await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender:'Natch',message:t})});
+  renderChat();
+ }catch(e){}
 }
 
-// UTILITIES
-function escHtml(s){return String(s||'')
- .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
 // INIT
 initTheme();
