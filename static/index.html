@@ -1,451 +1,278 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
+<html lang="es"><head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADAM OS — Command Center v2</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ADAM OS v3</title>
 <style>
-/* ===== RESET & BASE ===== */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*{margin:0;padding:0;box-sizing:border-box}
 :root{
- --bg:#0a0a0f; --bg2:#12121a; --bg3:#1a1a2e;
- --cyan:#00f0ff; --cyan-dim:rgba(0,240,255,.15);
- --magenta:#ff00e5; --gold:#ffd700; --green:#00ff88;
- --red:#ff3355; --orange:#ff8800; --blue:#4488ff;
- --text:#c8c8d4; --text-dim:#666680; --text-bright:#e8e8f0;
- --border:rgba(0,240,255,.12);
- --radius:8px; --glow:0 0 20px rgba(0,240,255,.08);
- --font:'Segoe UI','Inter',system-ui,-apple-system,sans-serif;
- font-size:14px;
+ --bg:#0a0a0f; --bg2:#12121a; --bg3:#1a1a25;
+ --text:#e0e0ef; --text2:#8888a0;
+ --cyan:#00f0ff; --pink:#ff00e5; --gold:#ffd700;
+ --green:#00ff88; --blue:#4488ff; --orange:#ff6600;
+ --red:#ff3344; --purple:#8855ff;
+ --border:#2a2a3a;
+ --radius:12px; --radius-sm:8px;
+ font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif
 }
-body{
- background:var(--bg); color:var(--text); font-family:var(--font);
- min-height:100vh; overflow-x:hidden;
-}
+body{background:var(--bg);color:var(--text);min-height:100vh;display:flex}
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
-::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:3px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
-/* ===== LAYOUT ===== */
-.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
-.sidebar{
- background:var(--bg2); border-right:1px solid var(--border);
- padding:20px 16px; display:flex; flex-direction:column; gap:20px;
- position:sticky; top:0; height:100vh; overflow-y:auto;
-}
-.sidebar h1{font-size:18px;color:var(--cyan);display:flex;align-items:center;gap:8px}
-.sidebar h1 span{font-size:10px;color:var(--text-dim);display:block;margin-top:-2px}
-.sidebar nav{display:flex;flex-direction:column;gap:4px;flex:1}
-.sidebar nav a{
- color:var(--text-dim);text-decoration:none;padding:8px 12px;
- border-radius:var(--radius);font-size:13px;transition:.2s;
- display:flex;align-items:center;gap:10px;
-}
-.sidebar nav a:hover,.sidebar nav a.active{background:var(--cyan-dim);color:var(--cyan)}
-.sidebar nav a .badge{
- margin-left:auto;background:var(--cyan-dim);color:var(--cyan);
- font-size:10px;padding:2px 8px;border-radius:10px;
-}
-.sidebar-footer{font-size:11px;color:var(--text-dim);text-align:center;padding-top:12px;border-top:1px solid var(--border)}
-.main{display:flex;flex-direction:column;padding:24px;gap:20px;max-width:1400px}
-.main-header{
- display:flex;justify-content:space-between;align-items:center;
- padding-bottom:12px;border-bottom:1px solid var(--border);
-}
-.main-header h2{font-size:20px;color:var(--text-bright)}
-.main-header .time{color:var(--text-dim);font-size:13px;font-family:monospace}
-.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
-.status-dot.online{background:var(--green);box-shadow:0 0 8px var(--green)}
-.status-dot.busy{background:var(--orange);box-shadow:0 0 8px var(--orange)}
-.status-dot.offline{background:var(--text-dim)}
+/* SIDEBAR */
+.sidebar{width:200px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);padding:20px 12px;display:flex;flex-direction:column;gap:4px}
+.sidebar .logo{font-size:18px;font-weight:800;color:var(--cyan);margin-bottom:20px;letter-spacing:-0.5px}
+.sidebar .logo span{color:var(--gold)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:14px;transition:.2s}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(0,240,255,.1);color:var(--cyan)}
+.nav-item .icon{font-size:16px}
 
-/* ===== CARDS ===== */
-.grid{display:grid;gap:16px}
-.grid-2{grid-template-columns:1fr 1fr}
-.grid-3{grid-template-columns:1fr 1fr 1fr}
-.grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
-.card{
- background:var(--bg2); border:1px solid var(--border);
- border-radius:var(--radius); padding:20px;
- transition:border-color .3s,box-shadow .3s;
-}
-.card:hover{border-color:rgba(0,240,255,.25)}
-.card-h{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.card-v{font-size:28px;font-weight:700;font-family:monospace}
-.card-v .unit{font-size:12px;color:var(--text-dim);font-weight:400}
-.card-v .label{font-size:11px;color:var(--text-dim);display:block;margin-top:2px;font-family:var(--font)}
+/* MAIN CONTENT */
+.main{flex:1;padding:20px 24px;overflow-y:auto;max-height:100vh}
+.page{display:none}
+.page.active{display:block}
 
-/* ===== SYSTEM BARS ===== */
-.sys-bar{height:6px;background:var(--bg3);border-radius:3px;margin-top:6px;overflow:hidden}
-.sys-bar-fill{height:100%;border-radius:3px;transition:width .5s ease,background .5s ease}
-.sys-bar-fill.low{background:var(--green)}
-.sys-bar-fill.mid{background:var(--orange)}
-.sys-bar-fill.high{background:var(--red)}
-.sys-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+/* HEADER */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-header h1{font-size:22px;font-weight:700}
+.page-header .subtitle{font-size:13px;color:var(--text2);margin-top:2px}
 
-/* ===== TASK BOARD ===== */
-.task-board{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;min-height:300px}
-.task-col{
- background:var(--bg3); border-radius:var(--radius); padding:12px;
- display:flex;flex-direction:column;gap:8px;
-}
-.task-col-h{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
-.task-item{
- background:var(--bg2); border:1px solid var(--border);
- border-radius:6px; padding:10px; cursor:pointer;
- transition:.2s;position:relative;
-}
-.task-item:hover{border-color:var(--cyan);transform:translateX(3px)}
-.task-item.priority-critical{border-left:3px solid var(--red)}
-.task-item.priority-high{border-left:3px solid var(--orange)}
-.task-item.priority-medium{border-left:3px solid var(--gold)}
-.task-item.priority-low{border-left:3px solid var(--text-dim)}
-.task-item-t{font-size:12px;color:var(--text-bright);margin-bottom:4px}
-.task-item-a{font-size:10px;color:var(--text-dim);display:flex;justify-content:space-between}
-.task-actions{display:flex;gap:4px;margin-top:6px}
-.task-actions button{
- background:var(--bg3); border:1px solid var(--border); color:var(--text);
- border-radius:4px; padding:2px 8px; font-size:10px; cursor:pointer; transition:.2s;
-}
-.task-actions button:hover{background:var(--cyan-dim);color:var(--cyan)}
-.task-empty{font-size:12px;color:var(--text-dim);text-align:center;padding:20px 0}
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.stat-card .num{font-size:24px;font-weight:700}
+.stat-card .label{font-size:12px;color:var(--text2);margin-top:2px}
+.stat-card .num.cyan{color:var(--cyan)}
+.stat-card .num.gold{color:var(--gold)}
+.stat-card .num.green{color:var(--green)}
+.stat-card .num.pink{color:var(--pink)}
+.stat-card .num.blue{color:var(--blue)}
 
-/* ===== REVENUE CHART ===== */
-.chart-container{width:100%;height:220px;position:relative}
-.chart-container svg{width:100%;height:100%}
-.revenue-legend{display:flex;gap:20px;margin-top:12px;flex-wrap:wrap}
-.revenue-legend-item{display:flex;align-items:center;gap:6px;font-size:12px}
-.legend-dot{width:10px;height:10px;border-radius:50%}
+/* HIERARCHY TREE */
+.tree-container{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;overflow-x:auto}
+.tree{display:flex;flex-direction:column;align-items:center}
+.tree-row{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+.tree-agent{display:flex;flex-direction:column;align-items:center;gap:6px}
+.tree-agent .node{background:var(--bg3);border:2px solid;border-radius:var(--radius);padding:10px 18px;text-align:center;min-width:100px;cursor:pointer;transition:.2s}
+.tree-agent .node:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,240,255,.15)}
+.tree-agent .node .name{font-size:14px;font-weight:700}
+.tree-agent .node .role{font-size:10px;color:var(--text2);margin-top:2px}
+.tree-agent .node .count{font-size:10px;color:var(--text2);margin-top:4px;opacity:.6}
+.tree-line{width:2px;height:16px;background:var(--border)}
+.tree-branch{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;padding:8px 0}
+.tree-unit{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;min-width:120px;font-size:12px}
+.tree-unit .u-name{font-weight:600;margin-bottom:4px}
+.tree-unit .u-dept{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.tree-unit .u-dept .tag{background:var(--bg);padding:2px 6px;border-radius:4px;font-size:10px;color:var(--text2)}
+.tree-unit .u-emp{font-size:10px;color:var(--text2);margin-top:3px;padding:1px 4px;border-left:2px solid var(--cyan);margin-bottom:1px}
 
-/* ===== AGENT TOPOLOGY ===== */
-.agent-topo{position:relative;min-height:320px;padding:20px 0}
-.topo-svg{width:100%;height:320px}
-.agent-node{
- cursor:pointer; transition:.3s;
-}
-.agent-node:hover .agent-node-bg{filter:drop-shadow(0 0 12px rgba(0,240,255,.4))}
-.agent-node-bg{transition:.3s}
-.agent-label{font-size:9px;fill:var(--text);text-anchor:middle}
-.agent-label.name{font-weight:600;font-size:10px}
-.agent-label.status{font-size:8px;fill:var(--text-dim)}
-.agent-line{stroke:var(--border);stroke-width:1.5;fill:none;transition:.5s}
-.agent-line.active{stroke:var(--cyan);stroke-width:2;stroke-dasharray:4 2;animation:dashMove 1s linear infinite}
-@keyframes dashMove{to{stroke-dashoffset:-8}}
-.agent-line.success{stroke:var(--green);stroke-width:2}
-.agent-pulse{
- animation:pulse 2s ease-in-out infinite;
- transform-origin:center;
-}
-@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+/* TASK BOARD */
+.task-board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;min-height:200px}
+.col{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;min-height:200px}
+.col-header{font-size:13px;font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+.col-header .count{background:var(--bg3);padding:0 6px;border-radius:4px;font-size:11px;color:var(--text2)}
+.task-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:.15s}
+.task-card:hover{border-color:var(--cyan)}
+.task-card .title{font-size:13px;font-weight:500;margin-bottom:4px}
+.task-card .meta{display:flex;gap:6px;flex-wrap:wrap;font-size:10px;color:var(--text2)}
+.task-card .meta .tag{padding:1px 6px;border-radius:4px}
+.tag-critical{background:rgba(255,51,68,.15);color:var(--red)}
+.tag-high{background:rgba(255,102,0,.15);color:var(--orange)}
+.tag-medium{background:rgba(255,215,0,.1);color:var(--gold)}
+.tag-low{background:rgba(136,136,160,.1);color:var(--text2)}
+.empty-col{text-align:center;color:var(--text2);padding:30px 0;font-size:13px}
 
-/* ===== CHAT ===== */
-.chat-container{display:flex;flex-direction:column;height:500px}
-.chat-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-.chat-msg{max-width:80%;padding:8px 14px;border-radius:12px;font-size:13px;line-height:1.4;animation:fadeIn .3s}
-.chat-msg.user{background:var(--cyan-dim);align-self:flex-end;border-bottom-right-radius:4px;color:var(--text-bright)}
-.chat-msg.axon{background:var(--bg3);align-self:flex-start;border-bottom-left-radius:4px;border:1px solid var(--border)}
-.chat-msg.system{background:transparent;align-self:center;font-size:11px;color:var(--text-dim);font-style:italic}
-.chat-msg .sender{font-size:10px;font-weight:600;margin-bottom:2px}
-.chat-msg.user .sender{color:var(--cyan)}
-.chat-msg.axon .sender{color:var(--magenta)}
-.chat-msg .time{font-size:9px;color:var(--text-dim);margin-top:2px;text-align:right}
+/* AGENT DETAIL VIEW */
+.agent-section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.agent-header{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.agent-header .avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;border:2px solid}
+.agent-header .info .name{font-size:16px;font-weight:700}
+.agent-header .info .role{font-size:12px;color:var(--text2)}
+.agent-departments{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.unit-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px}
+.unit-card .unit-name{font-size:13px;font-weight:600;margin-bottom:6px}
+.unit-card .emp{font-size:12px;padding:3px 6px;border-left:2px solid var(--cyan);margin:2px 0;color:var(--text2)}
+
+/* ACTIVITY LOG */
+.log-list{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
+.log-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.log-item:last-child{border-bottom:none}
+.log-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.log-dot.success{background:var(--green)}
+.log-dot.idle{background:var(--text2)}
+.log-dot.error{background:var(--red)}
+.log-agent{font-weight:600;color:var(--cyan)}
+.log-action{color:var(--text2)}
+
+/* CHAT */
+.chat-container{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;height:500px}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chat-msg{max-width:80%;padding:10px 14px;border-radius:var(--radius);font-size:14px;line-height:1.4}
+.chat-msg.bot{background:var(--bg3);align-self:flex-start;border:1px solid var(--border)}
+.chat-msg.user{background:rgba(0,240,255,.1);align-self:flex-end;border:1px solid rgba(0,240,255,.2)}
+.chat-msg .sender{font-size:11px;color:var(--text2);margin-bottom:3px}
 .chat-input{display:flex;gap:8px;padding:12px;border-top:1px solid var(--border)}
-.chat-input input{
- flex:1;background:var(--bg3);border:1px solid var(--border);
- border-radius:20px;padding:10px 16px;color:var(--text);font-size:13px;outline:none;
- transition:border-color .2s;
-}
+.chat-input input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);outline:none;font-size:13px}
 .chat-input input:focus{border-color:var(--cyan)}
-.chat-input button{
- background:var(--cyan);color:var(--bg);border:none;
- border-radius:20px;padding:10px 20px;font-weight:600;cursor:pointer;
- transition:.2s;font-size:13px;
-}
-.chat-input button:hover{background:var(--gold);color:var(--bg)}
-.chat-typing{font-size:11px;color:var(--text-dim);padding:4px 14px;animation:pulse 1.5s infinite}
+.chat-input button{background:var(--cyan);color:var(--bg);border:none;border-radius:var(--radius-sm);padding:10px 18px;font-weight:600;cursor:pointer;font-size:13px}
 
-/* ===== MISSION ===== */
-.mission-card{
- background:var(--bg3); border-radius:var(--radius); padding:14px;
- border-left:3px solid var(--cyan); transition:.2s;
-}
-.mission-card:hover{border-left-color:var(--gold)}
-.mission-card-h{font-size:14px;color:var(--text-bright);margin-bottom:4px}
-.mission-card-d{font-size:11px;color:var(--text-dim)}
-.mission-progress{height:4px;background:var(--bg2);border-radius:2px;margin-top:8px;overflow:hidden}
-.mission-progress-fill{height:100%;border-radius:2px;background:var(--cyan);transition:width .5s}
-
-/* ===== NEW TASK FORM ===== */
-.modal-overlay{
- display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
- z-index:100;align-items:center;justify-content:center;
-}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
-.modal{
- background:var(--bg2); border:1px solid var(--border); border-radius:12px;
- padding:24px; width:90%;max-width:480px;
-}
-.modal h3{color:var(--cyan);margin-bottom:16px}
-.modal input,.modal select,.modal textarea{
- width:100%;background:var(--bg3);border:1px solid var(--border);
- border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;
- margin-bottom:12px;outline:none;font-family:var(--font);
-}
-.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--cyan)}
-.modal textarea{min-height:60px;resize:vertical}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end}
-.modal-actions button{
- padding:8px 20px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:.2s;
-}
-.btn-primary{background:var(--cyan);color:var(--bg);font-weight:600}
-.btn-primary:hover{background:var(--gold)}
-.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)!important}
-.btn-secondary:hover{background:var(--cyan-dim);color:var(--cyan)}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:440px;max-width:90vw}
+.modal h2{font-size:18px;margin-bottom:16px}
+.modal label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
+.modal input,.modal select,.modal textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13px;margin-bottom:12px;outline:none}
+.modal input:focus,.modal select:focus{border-color:var(--cyan)}
+.modal textarea{min-height:80px;resize:vertical}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.modal-actions button{padding:8px 18px;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;font-size:13px;border:none}
+.modal-actions .btn-primary{background:var(--cyan);color:var(--bg)}
+.modal-actions .btn-secondary{background:var(--bg3);color:var(--text)}
 
-/* ===== PROJECTS ===== */
-.proj-card{background:var(--bg3);border-radius:var(--radius);padding:16px;border:1px solid var(--border)}
-.proj-card-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.proj-card-h h4{font-size:13px;color:var(--text-bright)}
-.proj-type{font-size:10px;color:var(--cyan);background:var(--cyan-dim);padding:2px 8px;border-radius:4px}
-.proj-desc{font-size:12px;color:var(--text-dim);margin-bottom:8px}
+/* BUTTONS */
+button{font-family:inherit}
+.btn-new{background:var(--cyan);color:var(--bg);border:none;border-radius:var(--radius-sm);padding:8px 16px;font-weight:600;cursor:pointer;font-size:13px;transition:.2s}
+.btn-new:hover{opacity:.85}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:4px;cursor:pointer;border:none;font-weight:500;transition:.15s}
+.btn-sm:hover{opacity:.8}
 
-/* ===== AGENTS SECTION ===== */
-.agent-card{
- background:var(--bg3); border-radius:var(--radius); padding:14px;
- display:flex; align-items:center; gap:12px; transition:.2s;
-}
-.agent-card:hover{border-color:var(--cyan)}
-.agent-icon{
- width:36px;height:36px;border-radius:50%;
- display:flex;align-items:center;justify-content:center;
- font-size:16px;font-weight:700;flex-shrink:0;
-}
-.agent-info{flex:1}
-.agent-name{font-size:13px;color:var(--text-bright);font-weight:600}
-.agent-role{font-size:11px;color:var(--text-dim)}
-.agent-status{font-size:10px}
-
-/* ===== MISC ===== */
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.fade-in{animation:fadeIn .4s forwards}
-.loading-pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cyan);animation:pulse 1.5s infinite}
-.flex{display:flex}
-.flex-between{justify-content:space-between}
-.gap-8{gap:8px}
-.gap-12{gap:12px}
-.items-center{align-items:center}
-.mt-8{margin-top:8px}
-.mt-12{margin-top:12px}
-.text-dim{color:var(--text-dim)}
-.text-cyan{color:var(--cyan)}
-.text-gold{color:var(--gold)}
-.text-green{color:var(--green)}
-.text-sm{font-size:12px}
-.text-xs{font-size:11px}
-.text-center{text-align:center}
-.mono{font-family:monospace}
-.w-full{width:100%}
-
-@media(max-width:1200px){
- .task-board{grid-template-columns:repeat(2,1fr)}
- .grid-4{grid-template-columns:1fr 1fr}
-}
+/* RESPONSIVE */
 @media(max-width:900px){
- .app{grid-template-columns:1fr}
- .sidebar{height:auto;position:static;flex-direction:row;flex-wrap:wrap;padding:12px 16px;gap:8px}
- .sidebar nav{flex-direction:row;flex-wrap:wrap;gap:4px}
- .sidebar h1{font-size:16px}
- .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
- .task-board{grid-template-columns:1fr}
- .chat-container{height:400px}
+ .sidebar{width:56px;padding:12px 8px}
+ .sidebar .logo{font-size:14px}
+ .nav-item span:not(.icon){display:none}
+ .task-board{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));overflow-x:auto}
+}
+@media(max-width:600px){
+ .main{padding:12px}
+ .stats-row{grid-template-columns:repeat(2,1fr)}
 }
 </style>
-</head>
-<body>
-<div class="app">
+</head><body>
 
-<!-- ===== SIDEBAR ===== -->
-<aside class="sidebar">
- <h1>🜁 ADAM OS <span>v2.0 Command Center</span></h1>
- <nav>
-  <a href="#" class="active" data-section="overview"><span>📊</span> Vista General</a>
-  <a href="#" data-section="tasks"><span>📋</span> Task Board <span class="badge" id="task-count">0</span></a>
-  <a href="#" data-section="chat"><span>💬</span> Chat Axon</a>
-  <a href="#" data-section="revenue"><span>📈</span> Revenue Dynamics</a>
-  <a href="#" data-section="agents"><span>🤖</span> Agent Topology</a>
-  <a href="#" data-section="projects"><span>🗂️</span> Proyectos</a>
-  <a href="#" data-section="missions"><span>🎯</span> Misiones</a>
- </nav>
- <div class="sidebar-footer">
-  <span class="status-dot online" id="hermes-status"></span>Hermes online<br>
-  <span id="uptime-display"></span>
+<!-- SIDEBAR -->
+<nav class="sidebar">
+ <div class="logo">ADAM <span>OS</span></div>
+ <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+  <span class="icon">🏛️</span><span>Dashboard</span>
  </div>
-</aside>
-
-<!-- ===== MAIN CONTENT ===== -->
-<main class="main" id="main-content">
-
-<!-- Header -->
-<div class="main-header">
- <h2 id="section-title">📊 Vista General</h2>
- <div class="flex gap-12 items-center">
-  <span class="mono text-sm text-dim" id="current-time"></span>
+ <div class="nav-item" data-page="tasks" onclick="switchPage('tasks')">
+  <span class="icon">📋</span><span>Tareas</span>
  </div>
-</div>
+ <div class="nav-item" data-page="agents" onclick="switchPage('agents')">
+  <span class="icon">🤖</span><span>Agentes</span>
+ </div>
+ <div class="nav-item" data-page="activity" onclick="switchPage('activity')">
+  <span class="icon">📡</span><span>Actividad</span>
+ </div>
+ <div class="nav-item" data-page="chat" onclick="switchPage('chat')">
+  <span class="icon">💬</span><span>Chat</span>
+ </div>
+</nav>
 
-<!-- ===== SECTION: OVERVIEW ===== -->
-<div id="section-overview" class="section active">
+<!-- MAIN -->
+<div class="main" id="mainContent">
 
- <!-- System Resources -->
- <div class="card">
-  <div class="card-h"><span>🖥️</span> Recursos del Sistema <span class="text-xs text-dim">(tiempo real)</span></div>
-  <div class="grid grid-3" id="system-cards">
+ <!-- ===== DASHBOARD ===== -->
+ <div class="page active" id="page-dashboard">
+  <div class="page-header">
    <div>
-    <div class="card-v" id="cpu-val">0<span class="unit">%</span></div>
-    <div class="sys-row"><span>CPU</span><span id="cpu-cores">0 cores</span></div>
-    <div class="sys-bar"><div class="sys-bar-fill low" id="cpu-bar" style="width:0%"></div></div>
-    <div class="text-xs text-dim mt-8" id="cpu-load">Load: 0.00</div>
+    <h1>🏛️ Command Center</h1>
+    <div class="subtitle">ADAM OS System — Jerarquía v3</div>
    </div>
+   <button class="btn-new" onclick="switchPage('tasks')">+ Nueva Tarea</button>
+  </div>
+  
+  <div class="stats-row" id="statsRow"></div>
+  <div class="tree-container"><div class="tree" id="hierarchyTree"></div></div>
+  
+  <div style="margin-top:20px">
+   <h2 style="font-size:16px;margin-bottom:10px">📡 Actividad Reciente</h2>
+   <div class="log-list" id="miniLog"></div>
+  </div>
+ </div>
+
+ <!-- ===== TASKS ===== -->
+ <div class="page" id="page-tasks">
+  <div class="page-header">
    <div>
-    <div class="card-v" id="ram-val">0<span class="unit">GB</span></div>
-    <div class="sys-row"><span>RAM</span><span id="ram-total">0 GB</span></div>
-    <div class="sys-bar"><div class="sys-bar-fill low" id="ram-bar" style="width:0%"></div></div>
-    <div class="text-xs text-dim mt-8" id="ram-used">Used: 0 GB</div>
+    <h1>📋 Tablero de Tareas</h1>
+    <div class="subtitle">Natch da tareas a los agentes → ellos delegan a empleados</div>
    </div>
+   <button class="btn-new" onclick="showNewTask()">+ Nueva Tarea</button>
+  </div>
+  <div id="dragHint" style="font-size:12px;color:var(--text2);margin-bottom:10px;text-align:center">Usa los botones para mover tareas entre columnas</div>
+  <div class="task-board" id="taskBoard"></div>
+ </div>
+
+ <!-- ===== AGENTS ===== -->
+ <div class="page" id="page-agents">
+  <div class="page-header">
    <div>
-    <div class="card-v" id="disk-val">0<span class="unit">%</span></div>
-    <div class="sys-row"><span>Disco</span><span id="disk-total">0 GB</span></div>
-    <div class="sys-bar"><div class="sys-bar-fill low" id="disk-bar" style="width:0%"></div></div>
-    <div class="text-xs text-dim mt-8" id="disk-used">Used: 0 GB</div>
+    <h1>🤖 Jerarquía de Agentes</h1>
+    <div class="subtitle">Agentes coordinadores → Unidades de negocio → Departamentos → Empleados</div>
    </div>
   </div>
+  <div id="agentsFullHierarchy"></div>
  </div>
 
- <!-- Agent Status Cards -->
- <div class="card">
-  <div class="card-h"><span>🤖</span> Estado de Agentes</div>
-  <div class="grid grid-4" id="agents-mini"></div>
- </div>
-
- <!-- Mini Stats -->
- <div class="grid grid-3">
-  <div class="card">
-   <div class="card-h">📋 Tareas Pendientes</div>
-   <div class="card-v" id="overview-pending">0</div>
+ <!-- ===== ACTIVITY ===== -->
+ <div class="page" id="page-activity">
+  <div class="page-header">
+   <div>
+    <h1>📡 Registro de Actividad</h1>
+    <div class="subtitle">Acciones de agentes y empleados en tiempo real</div>
+   </div>
   </div>
-  <div class="card">
-   <div class="card-h">📈 Revenue Proyectado</div>
-   <div class="card-v" id="overview-revenue">$0</div>
-  </div>
-  <div class="card">
-   <div class="card-h">🎯 Misiones Activas</div>
-   <div class="card-v" id="overview-missions">0</div>
-  </div>
+  <div class="log-list" id="fullLog"></div>
  </div>
-</div>
 
-<!-- ===== SECTION: TASKS ===== -->
-<div id="section-tasks" class="section" style="display:none">
- <div class="flex flex-between items-center" style="margin-bottom:12px">
-  <div class="card-h" style="margin-bottom:0">📋 Task Board — Control de Misiones</div>
-  <button class="btn-primary" style="padding:8px 16px;border:none;border-radius:6px" onclick="showNewTaskModal()">+ Nueva Tarea</button>
- </div>
- <div class="task-board" id="task-board"></div>
-</div>
-
-<!-- ===== SECTION: CHAT ===== -->
-<div id="section-chat" class="section" style="display:none">
- <div class="card">
-  <div class="card-h"><span>💬</span> Chat con Axon — Command Center</div>
+ <!-- ===== CHAT ===== -->
+ <div class="page" id="page-chat">
+  <div class="page-header">
+   <div>
+    <h1>💬 Chat con AXON</h1>
+    <div class="subtitle">Háblale al sistema — comandos, tareas, misiones</div>
+   </div>
+  </div>
   <div class="chat-container">
-   <div class="chat-messages" id="chat-messages"></div>
+   <div class="chat-msgs" id="chatMessages"></div>
    <div class="chat-input">
-    <input type="text" id="chat-input" placeholder="Escribe un mensaje a Axon..." 
-           onkeydown="if(event.key==='Enter') sendChat()">
-    <button onclick="sendChat()">Enviar</button>
+    <input id="chatInput" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')sendChatMsg()">
+    <button onclick="sendChatMsg()">Enviar</button>
    </div>
   </div>
  </div>
 </div>
 
-<!-- ===== SECTION: REVENUE ===== -->
-<div id="section-revenue" class="section" style="display:none">
- <div class="card">
-  <div class="card-h"><span>📈</span> Revenue Dynamics — Real vs Proyectado</div>
-  <div class="chart-container" id="revenue-chart"><svg viewBox="0 0 800 220"></svg></div>
-  <div class="revenue-legend" id="revenue-legend"></div>
- </div>
- <div class="grid grid-2" style="margin-top:12px">
-  <div class="card">
-   <div class="card-h">💰 Ingresos por Servicio</div>
-   <div id="revenue-services"></div>
-  </div>
-  <div class="card">
-   <div class="card-h">📊 Proyección 30 Días</div>
-   <div id="revenue-forecast-summary"></div>
-  </div>
- </div>
-</div>
-
-<!-- ===== SECTION: AGENTS ===== -->
-<div id="section-agents" class="section" style="display:none">
- <div class="card">
-  <div class="card-h"><span>🤖</span> Agent Topology — Comunicación en Vivo</div>
-  <div class="agent-topo">
-   <svg class="topo-svg" id="topo-svg" viewBox="0 0 800 380"></svg>
-  </div>
- </div>
- <div class="card" style="margin-top:12px">
-  <div class="card-h">📜 Log de Actividad de Agentes</div>
-  <div id="agent-log-list" style="max-height:300px;overflow-y:auto"></div>
- </div>
-</div>
-
-<!-- ===== SECTION: PROJECTS ===== -->
-<div id="section-projects" class="section" style="display:none">
- <div class="card">
-  <div class="card-h"><span>🗂️</span> Proyectos Activos</div>
-  <div class="grid grid-2" id="projects-list"></div>
- </div>
-</div>
-
-<!-- ===== SECTION: MISSIONS ===== -->
-<div id="section-missions" class="section" style="display:none">
- <div class="card">
-  <div class="card-h"><span>🎯</span> Misiones</div>
-  <div id="missions-list"></div>
- </div>
-</div>
-
-</main>
-</div>
-
-<!-- ===== NEW TASK MODAL ===== -->
-<div class="modal-overlay" id="task-modal" onclick="if(event.target===this)hideNewTaskModal()">
+<!-- NEW TASK MODAL -->
+<div class="modal-overlay" id="taskModal">
  <div class="modal">
-  <h3>📋 Nueva Tarea</h3>
-  <input type="text" id="task-title" placeholder="Título de la tarea">
-  <textarea id="task-desc" placeholder="Descripción (opcional)"></textarea>
-  <select id="task-priority">
-   <option value="medium">Prioridad: Media</option>
-   <option value="high">Prioridad: Alta</option>
-   <option value="critical">Prioridad: Crítica</option>
-   <option value="low">Prioridad: Baja</option>
+  <h2>📋 Nueva Tarea</h2>
+  <label>Título</label>
+  <input id="taskTitle" placeholder="¿Qué hay que hacer?">
+  <label>Descripción</label>
+  <textarea id="taskDesc" placeholder="Detalles de la tarea..."></textarea>
+  <label>Asignar a</label>
+  <select id="taskAssign">
+   <option value="AXON:agent">AXON (CEO)</option>
+   <option value="HERMES:agent">HERMES (Brazo Derecho)</option>
+   <option value="Axon-Life:agent">Axon-Life (Vida)</option>
+   <option value="Axon-Work:agent">Axon-Work (Trabajo)</option>
+   <option value="Axon-Music:agent">Axon-Music (Música)</option>
   </select>
-  <div class="flex gap-8">
-   <select id="task-assign" style="flex:1">
-    <option value="Axon">Asignar a: Axon</option>
-   </select>
-   <select id="task-department" style="flex:1">
-    <option value="">Departamento (opcional)</option>
-   </select>
-  </div>
-  <select id="task-mission">
-   <option value="">Sin misión</option>
+  <label>Prioridad</label>
+  <select id="taskPriority">
+   <option value="critical">Crítica</option>
+   <option value="high">Alta</option>
+   <option value="medium" selected>Media</option>
   </select>
   <div class="modal-actions">
-   <button class="btn-secondary" onclick="hideNewTaskModal()">Cancelar</button>
-   <button class="btn-primary" onclick="createTaskFromModal()">Crear Tarea</button>
+   <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
+   <button class="btn-primary" onclick="createTask()">Crear Tarea</button>
   </div>
  </div>
 </div>
@@ -453,713 +280,385 @@ body{
 <script>
 // ===== STATE =====
 const STATE = {
- tasks: [], missions: [], projects: [],
- agents: [], revenue: null, logs: [],
- chatWs: null, systemWs: null,
- chatSinceId: 0,
+ hierarchy: [],
+ tasks: [],
+ logs: [],
+ chatMsgId: 0,
+ currentPage: 'dashboard'
 };
 
-// ===== NAVIGATION =====
-document.querySelectorAll('.sidebar nav a').forEach(a => {
- a.addEventListener('click', e => {
-  e.preventDefault();
-  const section = a.dataset.section;
-  document.querySelectorAll('.sidebar nav a').forEach(x => x.classList.remove('active'));
-  a.classList.add('active');
-  document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
-  const el = document.getElementById('section-' + section);
-  if (el) { el.style.display = 'block'; el.style.animation = 'fadeIn .3s forwards'; }
-  document.getElementById('section-title').textContent = a.textContent.trim();
+// ===== DATA LOADERS =====
+async function loadAll() {
+ const [h, t, l] = await Promise.all([
+  fetch('/api/hierarchy').then(r=>r.json()),
+  fetch('/api/tasks').then(r=>r.json()),
+  fetch('/api/agent-logs?limit=8').then(r=>r.json()),
+ ]);
+ STATE.hierarchy = h;
+ STATE.tasks = t;
+ STATE.logs = l;
+ renderAll();
+}
+
+function renderAll() {
+ renderStats();
+ renderHierarchyTree();
+ renderTaskBoard();
+ renderAgentsFull();
+ renderMiniLog();
+ renderFullLog();
+ renderChat();
+}
+
+// ===== PAGE SWITCHING =====
+function switchPage(page) {
+ document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+ document.querySelector(`[data-page="${page}"]`).classList.add('active');
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+ document.getElementById(`page-${page}`).classList.add('active');
+ STATE.currentPage = page;
+ if (page === 'activity') renderFullLog();
+ if (page === 'chat') renderChat(); renderChatScroll();
+}
+
+// ===== STATS =====
+function renderStats() {
+ const tasks = STATE.tasks;
+ const agents = STATE.hierarchy;
+ const totalEmps = agents.reduce((s,a)=>{
+  return s + (a.units||[]).reduce((su,u)=>{
+   return su + (u.employees||[]).length + (u.children||[]).reduce((sc,c)=>{
+    return sc + (c.employees||[]).length;
+   },0);
+  },0);
+ },0);
+ 
+ document.getElementById('statsRow').innerHTML = `
+  <div class="stat-card"><div class="num cyan">${tasks.filter(t=>t.status==='pending').length}</div><div class="label">📌 Por Hacer</div></div>
+  <div class="stat-card"><div class="num gold">${tasks.filter(t=>t.status==='in_progress').length}</div><div class="label">⚡️ En Proceso</div></div>
+  <div class="stat-card"><div class="num blue">${tasks.filter(t=>t.status==='realizado'||t.status==='review').length}</div><div class="label">💪🏻 En Revisión</div></div>
+  <div class="stat-card"><div class="num green">${tasks.filter(t=>t.status==='completed').length}</div><div class="label">✅ Completado</div></div>
+  <div class="stat-card"><div class="num pink">${agents.length}</div><div class="label">🤖 Agentes</div></div>
+  <div class="stat-card"><div class="num blue">${totalEmps}</div><div class="label">👥 Empleados</div></div>
+ `;
+}
+
+// ===== HIERARCHY TREE =====
+function renderHierarchyTree() {
+ const agents = STATE.hierarchy.filter(a => a.level === 0 || a.level === 1);
+ // Build real tree starting from AXON
+ const tree = document.getElementById('hierarchyTree');
+ 
+ let html = '<div class="tree-row">';
+ agents.filter(a=>a.name==='AXON').forEach(a => {
+  html += renderTreeNode(a);
  });
-});
-
-// ===== CLOCK =====
-function updateClock() {
- const d = new Date();
- document.getElementById('current-time').textContent = 
-  d.toLocaleString('es-CL', {timeZone:'America/Santiago', hour12:false});
- setTimeout(updateClock, 1000);
-}
-updateClock();
-
-// ===== SYSTEM WS =====
-function connectSystemWS() {
- const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
- const ws = new WebSocket(`${proto}//${location.host}/ws/system`);
- STATE.systemWs = ws;
- ws.onmessage = e => {
-  try {
-   const data = JSON.parse(e.data);
-   if (data.type === 'system') {
-    updateSystemDisplay(data);
+ html += '</div>';
+ 
+ // HERMES level
+ const hermes = agents.filter(a=>a.name==='HERMES');
+ hermes.forEach(h => {
+  html += '<div class="tree-line"></div>';
+  html += '<div class="tree-row">' + renderTreeNode(h) + '</div>';
+  html += '<div class="tree-line"></div>';
+  // Subagents under HERMES
+  const subagents = STATE.hierarchy.filter(a => a.parent_id === h.id);
+  html += '<div class="tree-row">';
+  subagents.forEach(sa => {
+   html += `<div class="tree-agent">`;
+   html += renderTreeNode(sa);
+   // Units
+   const units = sa.units || [];
+   if (units.length) {
+    html += '<div class="tree-branch">';
+    units.forEach(u => {
+     html += renderUnitNode(u);
+    });
+    html += '</div>';
    }
-  } catch(err) {}
- };
- ws.onclose = () => setTimeout(connectSystemWS, 3000);
- ws.onerror = () => ws.close();
+   html += '</div>';
+  });
+  html += '</div>';
+ });
+ 
+ tree.innerHTML = html;
 }
 
-function updateSystemDisplay(data) {
- const cpu = data.cpu;
- const mem = data.memory;
- const disk = data.disk;
- 
- document.getElementById('cpu-val').innerHTML = cpu.percent.toFixed(1) + '<span class="unit">%</span>';
- document.getElementById('cpu-cores').textContent = cpu.cores + ' cores';
- document.getElementById('cpu-bar').style.width = cpu.percent + '%';
- document.getElementById('cpu-bar').className = 'sys-bar-fill ' + (cpu.percent > 80 ? 'high' : cpu.percent > 50 ? 'mid' : 'low');
- document.getElementById('cpu-load').textContent = 'Load: ' + (data.cpu.load_avg || [0,0,0]).join(', ');
- 
- document.getElementById('ram-val').innerHTML = mem.used_gb.toFixed(1) + '<span class="unit">GB</span>';
- document.getElementById('ram-total').textContent = mem.total_gb.toFixed(1) + ' GB';
- document.getElementById('ram-bar').style.width = mem.percent + '%';
- document.getElementById('ram-bar').className = 'sys-bar-fill ' + (mem.percent > 80 ? 'high' : mem.percent > 50 ? 'mid' : 'low');
- document.getElementById('ram-used').textContent = 'Used: ' + mem.used_gb.toFixed(1) + ' / ' + mem.total_gb.toFixed(1) + ' GB';
- 
- document.getElementById('disk-val').innerHTML = disk.percent.toFixed(1) + '<span class="unit">%</span>';
- document.getElementById('disk-total').textContent = disk.total_gb.toFixed(1) + ' GB';
- document.getElementById('disk-bar').style.width = disk.percent + '%';
- document.getElementById('disk-bar').className = 'sys-bar-fill ' + (disk.percent > 80 ? 'high' : disk.percent > 50 ? 'mid' : 'low');
- document.getElementById('disk-used').textContent = 'Used: ' + disk.used_gb.toFixed(1) + ' / ' + disk.total_gb.toFixed(1) + ' GB';
+function renderTreeNode(agent) {
+ const colors = {AXON:var(--cyan),HERMES:var(--pink),'Axon-Life':var(--green),'Axon-Work':var(--gold),'Axon-Music':var(--blue)};
+ const color = colors[agent.name] || '#666680';
+ const empCount = countEmps(agent);
+ return `<div class="tree-agent">
+  <div class="node" style="border-color:${color}" onclick="switchPage('agents')">
+   <div class="name" style="color:${color}">${agent.name}</div>
+   <div class="role">${agent.role.split(':')[0].substring(0,30)}</div>
+   <div class="count">${empCount > 0 ? empCount + ' empleados' : 'directivo'}</div>
+  </div>
+ </div>`;
 }
 
-// ===== TASKS =====
-async function loadTasks() {
- try {
-  const r = await fetch('/api/tasks');
-  STATE.tasks = await r.json();
-  renderTaskBoard();
-  updateTaskCount();
- } catch(e) { console.error('Tasks:', e); }
+function renderUnitNode(unit) {
+ const empList = (unit.employees||[]).map(e=>`<div class="u-emp" style="border-color:${unit.color||'var(--cyan)'}">👤 ${e.name}</div>`).join('');
+ const children = (unit.children||[]).map(c => {
+  const emps = (c.employees||[]).map(e=>`<div class="u-emp">${e.name}</div>`).join('');
+  return `<div class="u-dept"><span class="tag">${c.short_name||c.name}</span></div>${emps}`;
+ }).join('');
+ return `<div class="tree-unit">
+  <div class="u-name" style="color:${unit.color||'var(--gold)'}">${unit.name}</div>
+  ${empList}
+  ${children}
+ </div>`;
 }
 
+function countEmps(agent) {
+ return (agent.units||[]).reduce((s,u)=>{
+  return s + (u.employees||[]).length + (u.children||[]).reduce((sc,c)=>{
+   return sc + (c.employees||[]).length;
+  },0);
+ },0);
+}
+
+// ===== TASK BOARD =====
 function renderTaskBoard() {
  const cols = [
-  { key: 'pending', label: '📌 Por Hacer' },
-  { key: 'in_progress', label: '⚡️ En Proceso' },
-  { key: 'realizado', label: '💪🏻 Realizado' },
-  { key: 'review', label: '🔍 Revisión' },
-  { key: 'completed', label: '✅ Completado' },
+  {key:'pending',label:'📌 Por Hacer'},
+  {key:'in_progress',label:'⚡️ En Proceso'},
+  {key:'realizado',label:'💪🏻 Realizado'},
+  {key:'review',label:'🔍 Revisión'},
+  {key:'completed',label:'✅ Completado'},
  ];
- const board = document.getElementById('task-board');
- board.innerHTML = '';
  
+ let html = '';
  cols.forEach(col => {
   const tasks = STATE.tasks.filter(t => t.status === col.key);
-  const div = document.createElement('div');
-  div.className = 'task-col';
-  div.innerHTML = `<div class="task-col-h">${col.label} <span class="text-xs">${tasks.length}</span></div>`;
-  
-  if (tasks.length === 0) {
-   div.innerHTML += '<div class="task-empty">Sin tareas</div>';
-  } else {
-   tasks.forEach(t => {
-    const item = document.createElement('div');
-    item.className = `task-item priority-${t.priority || 'medium'}`;
-    const progress = t.progress || 0;
-    item.innerHTML = `
-     <div class="task-item-t">${t.title}</div>
-     <div class="task-item-a">
-      <span>${t.assigned_to || '—'}</span>
-      <span>${progress}%</span>
-     </div>
-     ${progress > 0 ? `<div class="sys-bar" style="margin-top:6px"><div class="sys-bar-fill low" style="width:${progress}%"></div></div>` : ''}
-     <div class="task-actions">
-      ${col.key === 'pending' ? '<button onclick="moveTask('+t.id+',\'in_progress\')">▶ Iniciar</button>' : ''}
-      ${col.key === 'in_progress' ? '<button onclick="moveTask('+t.id+',\'realizado\')">💪 Hecho</button>' : ''}
-      ${col.key === 'realizado' ? '<button onclick="moveTask('+t.id+',\'review\')">🔍 Revisar</button><button onclick="moveTask('+t.id+',\'in_progress\')">↩ Volver</button>' : ''}
-      ${col.key === 'review' ? '<button onclick="moveTask('+t.id+',\'completed\')">✅ Aprobar</button><button onclick="moveTask('+t.id+',\'in_progress\')">↩ Volver</button>' : ''}
-      ${col.key === 'completed' ? '<button onclick="moveTask('+t.id+',\'in_progress\')">↩ Reabrir</button>' : ''}
-      ${col.key === 'pending' ? '<button onclick="deleteTask('+t.id+')" style="color:var(--red)">✕</button>' : ''}
-     </div>
-    `;
-    div.appendChild(item);
-   });
-  }
-  board.appendChild(div);
+  html += `<div class="col">
+   <div class="col-header">${col.label} <span class="count">${tasks.length}</span></div>
+   ${tasks.length ? tasks.map(t => renderTaskCard(t)).join('') : '<div class="empty-col">—</div>'}
+  </div>`;
  });
+ document.getElementById('taskBoard').innerHTML = html;
 }
 
-function updateTaskCount() {
- const pending = STATE.tasks.filter(t => t.status !== 'completed').length;
- document.getElementById('task-count').textContent = pending;
- document.getElementById('overview-pending').textContent = pending;
+function renderTaskCard(t) {
+ const pClass = `tag-${t.priority || 'medium'}`;
+ const pLabel = {critical:'Crítica',high:'Alta',medium:'Media',low:'Baja'}[t.priority] || 'Media';
+ 
+ // Status actions
+ const actions = [];
+ if (t.status === 'pending') actions.push({status:'in_progress',label:'▶ Iniciar'});
+ if (t.status === 'in_progress') actions.push({status:'realizado',label:'💪 Hecho'});
+ if (t.status === 'realizado') actions.push({status:'review',label:'🔍 Revisar'});
+ if (t.status === 'review') actions.push({status:'completed',label:'✅ Aprobar'});
+ if (t.status === 'completed') actions.push({status:'pending',label:'↩ Reabrir'});
+ 
+ return `<div class="task-card">
+  <div class="title">${t.title}</div>
+  <div class="meta">
+   <span class="tag ${pClass}">${pLabel}</span>
+   <span>👤 ${t.assigned_to}</span>
+   ${t.department_name ? `<span>🏢 ${t.department_name}</span>` : ''}
+  </div>
+  <div style="margin-top:6px;display:flex;gap:4px">
+   ${actions.map(a => `<button class="btn-sm" style="background:var(--bg);color:var(--text2);border:1px solid var(--border)" onclick="moveTask(${t.id},'${a.status}')">${a.label}</button>`).join('')}
+   ${t.status === 'pending' ? `<button class="btn-sm" style="background:rgba(255,51,68,.2);color:var(--red);border:1px solid rgba(255,51,68,.3)" onclick="deleteTask(${t.id})">🗑</button>` : ''}
+  </div>
+ </div>`;
 }
 
-async function moveTask(id, newStatus) {
- try {
-  await fetch(`/api/tasks/${id}`, {
-   method: 'PUT', headers: {'Content-Type':'application/json'},
-   body: JSON.stringify({status: newStatus, updated_at: new Date().toISOString()})
-  });
-  await loadTasks();
- } catch(e) { console.error(e); }
+async function moveTask(id, status) {
+ await fetch(`/api/tasks/${id}`, {
+  method:'PUT', headers:{'Content-Type':'application/json'},
+  body: JSON.stringify({status})
+ });
+ STATE.tasks = await fetch('/api/tasks').then(r=>r.json());
+ renderTaskBoard();
+ renderStats();
 }
 
 async function deleteTask(id) {
- if (!confirm('¿Eliminar esta tarea?')) return;
- try {
-  await fetch(`/api/tasks/${id}`, {method:'DELETE'});
-  await loadTasks();
- } catch(e) { console.error(e); }
+ if (!confirm('¿Eliminar tarea?')) return;
+ await fetch(`/api/tasks/${id}`,{method:'DELETE'});
+ STATE.tasks = STATE.tasks.filter(t=>t.id!==id);
+ renderTaskBoard();
+ renderStats();
 }
 
-// ===== NEW TASK MODAL =====
-async function showNewTaskModal() {
- document.getElementById('task-modal').classList.add('open');
- document.getElementById('task-title').value = '';
- document.getElementById('task-desc').value = '';
- document.getElementById('task-priority').value = 'medium';
- document.getElementById('task-assign').value = 'Axon';
- 
- // Load missions into selector
- try {
-  const r = await fetch('/api/missions');
-  const missions = await r.json();
-  const sel = document.getElementById('task-mission');
-  sel.innerHTML = '<option value="">Sin misión</option>';
-  missions.forEach(m => {
-   sel.innerHTML += `<option value="${m.id}">${m.name}</option>`;
-  });
- } catch(e) {}
- 
- // Load employees into assign selector
- try {
-  const r = await fetch('/api/employees');
-  const employees = await r.json();
-  const asel = document.getElementById('task-assign');
-  asel.innerHTML = '<option value="Axon">Axon (CEO)</option><option value="Hermes">Hermes</option>';
-  employees.forEach(e => {
-   asel.innerHTML += `<option value="${e.name}">${e.name}</option>`;
-  });
- } catch(e) {}
- 
- // Load departments
- try {
-  const hier = STATE.agentHierarchy;
-  if (hier && hier.subagent_departments) {
-   const dsel = document.getElementById('task-department');
-   dsel.innerHTML = '<option value="">Departamento (opcional)</option>';
-   Object.entries(hier.subagent_departments).forEach(([agent, deps]) => {
-    deps.forEach(d => {
-     dsel.innerHTML += `<option value="${d.id}">${d.short_name} — ${agent.replace('Axon-','')}</option>`;
-    });
-   });
-  }
- } catch(e) {}
- 
- setTimeout(() => document.getElementById('task-title').focus(), 100);
+function showNewTask() {
+ document.getElementById('taskModal').classList.add('open');
+ document.getElementById('taskTitle').value = '';
+ document.getElementById('taskDesc').value = '';
+ document.getElementById('taskAssign').value = 'AXON:agent';
+ document.getElementById('taskPriority').value = 'medium';
 }
 
-function hideNewTaskModal() {
- document.getElementById('task-modal').classList.remove('open');
+function closeModal() {
+ document.getElementById('taskModal').classList.remove('open');
 }
 
-async function createTaskFromModal() {
- const title = document.getElementById('task-title').value.trim();
+async function createTask() {
+ const title = document.getElementById('taskTitle').value.trim();
  if (!title) return;
+ const [assigned, atype] = document.getElementById('taskAssign').value.split(':');
  const data = {
   title,
-  description: document.getElementById('task-desc').value.trim(),
-  priority: document.getElementById('task-priority').value,
-  assigned_to: document.getElementById('task-assign').value,
-  mission_id: document.getElementById('task-mission').value || null,
-  department_id: document.getElementById('task-department').value || null,
+  description: document.getElementById('taskDesc').value.trim(),
+  assigned_to: assigned,
+  assigned_to_type: atype,
+  priority: document.getElementById('taskPriority').value,
  };
- try {
-  await fetch('/api/tasks', {
-   method:'POST', headers:{'Content-Type':'application/json'},
-   body: JSON.stringify(data)
-  });
-  hideNewTaskModal();
-  await loadTasks();
- } catch(e) { console.error(e); }
+ await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+ closeModal();
+ STATE.tasks = await fetch('/api/tasks').then(r=>r.json());
+ renderTaskBoard();
+ renderStats();
 }
 
-// ===== REVENUE =====
-async function loadRevenue() {
- try {
-  const r = await fetch('/api/revenue');
-  STATE.revenue = await r.json();
-  renderRevenueChart();
-  renderRevenueServices();
- } catch(e) { console.error('Revenue:', e); }
-}
-
-function renderRevenueChart() {
- const svg = document.querySelector('#revenue-chart svg');
- if (!STATE.revenue) return;
+// ===== AGENTS FULL VIEW =====
+function renderAgentsFull() {
+ const agents = STATE.hierarchy;
+ let html = '';
  
- const forecast = STATE.revenue.daily_forecast || [];
- if (forecast.length === 0) {
-  svg.innerHTML = '<text x="400" y="110" fill="#666680" text-anchor="middle" font-size="13">Sin datos de revenue</text>';
-  return;
- }
- 
- const w = 800, h = 220;
- const pad = {top:20, right:20, bottom:30, left:60};
- const cw = w - pad.left - pad.right;
- const ch = h - pad.top - pad.bottom;
- 
- // Get min/max
- const values = forecast.map(d => d.total || 0);
- const maxVal = Math.max(...values, 10000);
- const minVal = 0;
- 
- // Build path
- const points = forecast.map((d,i) => ({
-  x: pad.left + (i / Math.max(forecast.length-1, 1)) * cw,
-  y: pad.top + ch - ((d.total - minVal) / (maxVal - minVal)) * ch
- }));
- 
- let d = points.map((p,i) => (i===0?'M':'L') + p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
- 
- // Gradient
- const gradId = 'rev-grad';
- 
- svg.innerHTML = `
-  <defs>
-   <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stop-color="rgba(0,240,255,.3)"/>
-    <stop offset="100%" stop-color="rgba(0,240,255,0)"/>
-   </linearGradient>
-  </defs>
-  <rect x="${pad.left}" y="0" width="${cw}" height="${h}" fill="none"/>
-  <!-- Grid lines -->
-  ${[0,0.25,0.5,0.75,1].map(p => {
-   const y = pad.top + ch - p * ch;
-   const val = Math.round(minVal + (maxVal - minVal) * p);
-   return `<line x1="${pad.left}" y1="${y}" x2="${w-pad.right}" y2="${y}" stroke="rgba(255,255,255,.05)"/>
-           <text x="${pad.left-8}" y="${y+4}" fill="#666680" font-size="9" text-anchor="end">$${val.toLocaleString()}</text>`;
-  }).join('')}
-  <!-- Area fill -->
-  <path d="${d} L${points[points.length-1].x},${pad.top+ch} L${points[0].x},${pad.top+ch} Z" fill="url(#${gradId})" opacity="0.5"/>
-  <!-- Line -->
-  <path d="${d}" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linejoin="round"/>
-  <!-- Dots -->
-  ${forecast.map((d,i) => `<circle cx="${points[i].x}" cy="${points[i].y}" r="3" fill="var(--cyan)" opacity="0.6"/>`).join('')}
-  <!-- X labels (every 5th) -->
-  ${forecast.filter((_,i)=>i%5===0||i===forecast.length-1).map(d => {
-   const i = forecast.indexOf(d);
-   const p = points[i];
-   return `<text x="${p.x}" y="${h-5}" fill="#666680" font-size="8" text-anchor="middle">${d.date.slice(5)}</text>`;
-  }).join('')}
-  <!-- Current value -->
-  ${points.length > 0 ? `<text x="${points[points.length-1].x}" y="${points[points.length-1].y-10}" fill="var(--cyan)" font-size="10" text-anchor="middle" font-weight="600">$${Math.round(values[values.length-1]).toLocaleString()}</text>` : ''}
- `;
- 
- // Legend
- const legendEl = document.getElementById('revenue-legend');
- const total = values.reduce((a,b)=>a+b, 0);
- legendEl.innerHTML = `
-  <div class="revenue-legend-item"><span class="legend-dot" style="background:var(--cyan)"></span> Proyección 30 días: <strong>$${total.toLocaleString()}</strong></div>
-  <div class="revenue-legend-item"><span class="legend-dot" style="background:var(--text-dim)"></span> Basado en tareas completadas</div>
- `;
-}
-
-function renderRevenueServices() {
- const el = document.getElementById('revenue-services');
- if (!STATE.revenue) return;
- const actual = STATE.revenue.actual || [];
- if (actual.length === 0) {
-  el.innerHTML = '<div class="text-dim text-sm">Sin ingresos registrados aún</div>';
-  return;
- }
- el.innerHTML = actual.map(s => `
-  <div class="flex flex-between items-center" style="padding:8px 0;border-bottom:1px solid var(--border)">
-   <span class="text-sm">${s.service_name}</span>
-   <span class="mono ${s.total > 0 ? 'text-green' : 'text-dim'}">$${Math.round(s.total).toLocaleString()}</span>
-  </div>
- `).join('');
- 
- // Forecast summary
- const fEl = document.getElementById('revenue-forecast-summary');
- const forecast = STATE.revenue.forecast || [];
- fEl.innerHTML = forecast.map(s => `
-  <div class="flex flex-between items-center" style="padding:8px 0;border-bottom:1px solid var(--border)">
-   <span class="text-sm">${s.service_name}</span>
-   <span class="mono text-cyan">$${Math.round(s.total).toLocaleString()}</span>
-  </div>
- `).join('');
-}
-
-// ===== AGENT TOPOLOGY =====
-async function renderAgentTopology() {
- const svg = document.getElementById('topo-svg');
- let dataset;
- try {
-  const r = await fetch('/api/hierarchy');
-  dataset = await r.json();
- } catch(e) {
-  svg.innerHTML = '<text x="400" y="160" fill="#666680" text-anchor="middle" font-size="14">Cargando jerarquía...</text>';
-  return;
- }
- 
- const agents = dataset.agents || [];
- 
- // Layout coordinates
- const nodes = [];
- const cx = 400; // center x
- 
- // AXON at top
- nodes.push({id:'axon', label:'AXON', x:cx, y:40, color:'#00f0ff', type:'agent', pulse:true});
- 
- // HERMES below
- nodes.push({id:'hermes', label:'HERMES', x:cx, y:100, color:'#ff00e5', type:'agent', pulse:false});
- 
- // Sub-agents row
- const subAgents = agents.filter(a => a.type === 'subagent');
- const subStartX = cx - (subAgents.length - 1) * 100;
- subAgents.forEach((a, i) => {
-  nodes.push({id:a.name, label:a.name.replace('Axon-',''), x:subStartX + i*200, y:170, color:a.color, type:'subagent', pulse:false});
+ agents.filter(a => a.name === 'AXON').forEach(a => {
+  html += renderAgentSection(a);
+ });
+ agents.filter(a => a.name === 'HERMES').forEach(a => {
+  html += renderAgentSection(a);
+ });
+ agents.filter(a => a.parent_id && agents.find(p => p.id === a.parent_id && p.name === 'HERMES')).forEach(a => {
+  html += renderAgentSection(a);
  });
  
- // Connections
- let linesHtml = '';
+ document.getElementById('agentsFullHierarchy').innerHTML = html;
+}
+
+function renderAgentSection(agent) {
+ const colors = {AXON:var(--cyan),HERMES:var(--pink),'Axon-Life':var(--green),'Axon-Work':var(--gold),'Axon-Music':var(--blue)};
+ const color = colors[agent.name] || '#666680';
  
- // AXON → HERMES
- linesHtml += `<path class="agent-line active" d="M${cx},55 Q${cx},75 ${cx},85"/>`;
- 
- // HERMES → Subagents
- subAgents.forEach((a, i) => {
-  const nx = subStartX + i*200;
-  linesHtml += `<path class="agent-line" d="M${cx},115 Q${(cx+nx)/2},145 ${nx},155"/>`;
- });
- 
- // Subagents → Departments
- const deps = dataset.subagent_departments || {};
- Object.entries(deps).forEach(([agentName, departments], idx) => {
-  const agent = subAgents.find(a => a.name === agentName);
-  if (!agent || !departments) return;
-  const agentIdx = subAgents.indexOf(agent);
-  const ax = subStartX + agentIdx * 200;
-  const ay = 185;
+ const unitsHtml = (agent.units||[]).map(u => {
+  const empHtml = (u.employees||[]).map(e => `<div class="emp">👤 ${e.name} — <span style="color:var(--text2)">${e.role}</span></div>`).join('');
+  const childrenHtml = (u.children||[]).map(c => {
+   const cEmpHtml = (c.employees||[]).map(e => `<div class="emp">👤 ${e.name} — <span style="color:var(--text2)">${e.role}</span></div>`).join('');
+   return `<div style="margin:4px 0;padding:6px 8px;background:var(--bg);border-radius:6px">
+    <div style="font-size:12px;font-weight:600;color:${c.color||'var(--text)'}">${c.name}</div>
+    ${cEmpHtml || '<div style="font-size:11px;color:var(--text2);padding:4px 0">Sin empleados</div>'}
+   </div>`;
+  }).join('');
   
-  departments.forEach((dep, di) => {
-   const dx = ax - 80 + di * 160;
-   const dy = 230;
-   const dColor = agent.color;
-   
-   nodes.push({id:`dep-${dep.id}`, label:dep.short_name, x:dx, y:dy, color:dColor, type:'department', pulse:false});
-   linesHtml += `<path class="agent-line" d="M${ax},${ay} Q${(ax+dx)/2},${(ay+dy)/2} ${dx},${dy-10}"/>`;
-   
-   // Employees under each department
-   (dep.employees || []).forEach((emp, ei) => {
-    const ex = dx - 50 + ei * 100;
-    const ey = 280;
-    nodes.push({id:`emp-${emp.id}`, label:emp.name.replace(' ','\n'), x:ex, y:ey, color:'var(--text-dim)', type:'employee', pulse:false, small:true});
-    linesHtml += `<path class="agent-line" d="M${dx},${dy+15} Q${(dx+ex)/2},${(dy+ey)/2} ${ex},${ey-10}"/>`;
-   });
-  });
- });
- 
- // Draw nodes
- let nodesHtml = nodes.map(n => {
-  const r = n.small ? 14 : n.type === 'department' ? 16 : 22;
-  const labelY = n.small ? n.y+22 : n.y+20;
-  const labelClass = n.small ? 'agent-label' : 'agent-label name';
-  const pulseClass = n.pulse ? 'agent-pulse' : '';
-  const fillColor = n.small ? 'var(--bg2)' : 'var(--bg2)';
-  const strokeColor = n.type === 'department' ? n.color : n.color;
-  
-  return `<g class="agent-node" onclick="showAgentInfo('${n.label.replace('\n',' ')}')">
-   <circle class="agent-node-bg" cx="${n.x}" cy="${n.y}" r="${r}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2"/>
-   <circle cx="${n.x}" cy="${n.y}" r="${n.type==='agent'?6:4}" fill="${n.color}" class="${pulseClass}"/>
-   <text x="${n.x}" y="${labelY}" class="${labelClass}" font-size="${n.small?8:9}">${n.label}</text>
-  </g>`;
- }).join('');
- 
- svg.innerHTML = linesHtml + nodesHtml;
-}
-
-async function loadAgentLogs() {
- try {
-  const r = await fetch('/api/agents/logs?limit=30');
-  STATE.logs = await r.json();
- } catch(e) {}
-}
-
-function renderAgentLogs() {
- const el = document.getElementById('agent-log-list');
- el.innerHTML = STATE.logs.slice(0, 20).map(log => {
-  const time = new Date(log.timestamp + 'Z').toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-  const statusColor = log.status === 'success' ? 'var(--green)' : log.status === 'idle' ? 'var(--text-dim)' : 'var(--orange)';
-  return `<div class="flex items-center gap-8" style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
-   <span class="mono text-xs text-dim">${time}</span>
-   <span style="color:${statusColor}">●</span>
-   <strong>${log.agent_name}</strong>
-   <span class="text-dim">${log.action}</span>
-   ${log.target ? `<span class="text-dim">→ ${log.target}</span>` : ''}
+  return `<div class="unit-card">
+   <div class="unit-name" style="color:${u.color||'var(--text)'}">${u.short_name||u.name}</div>
+   <div style="font-size:11px;color:var(--text2);margin-bottom:6px">${u.description||u.unit_type}</div>
+   ${empHtml}
+   ${childrenHtml}
+   ${!empHtml && !childrenHtml ? '<div style="font-size:11px;color:var(--text2)">Sin empleados asignados</div>' : ''}
   </div>`;
  }).join('');
  
- if (STATE.logs.length === 0) {
-  el.innerHTML = '<div class="text-dim text-sm">Esperando actividad de agentes...</div>';
- }
+ const childAgents = (agent.children_agents||[]).map(ca =>
+  `<div style="margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid ${colors[ca.name]||'var(--cyan)'}">
+   <div style="font-size:13px;font-weight:600;color:${colors[ca.name]||'var(--cyan)'}">${ca.name}</div>
+   <div style="font-size:11px;color:var(--text2)">${ca.role}</div>
+  </div>`
+ ).join('');
+ 
+ return `<div class="agent-section">
+  <div class="agent-header">
+   <div class="avatar" style="border-color:${color};color:${color}">${agent.name[0]}</div>
+   <div class="info">
+    <div class="name" style="color:${color}">${agent.name}</div>
+    <div class="role">${agent.role}</div>
+   </div>
+  </div>
+  ${childAgents}
+  <div class="agent-departments">${unitsHtml}</div>
+ </div>`;
 }
 
-function showAgentInfo(name) {
- // Scroll to agents section and highlight
- document.querySelectorAll('#agent-log-list div').forEach(d => {
-  if (d.textContent.includes(name)) {
-   d.style.background = 'var(--cyan-dim)';
-   setTimeout(() => d.style.background = '', 2000);
-  }
+// ===== LOGS =====
+function renderMiniLog() {
+ const logs = STATE.logs.slice(0,5);
+ document.getElementById('miniLog').innerHTML = logs.map(l => renderLogItem(l)).join('');
+}
+
+function renderFullLog() {
+ let all = STATE.logs;
+ document.getElementById('fullLog').innerHTML = all.length ? all.map(l => renderLogItem(l)).join('') : '<div style="text-align:center;padding:40px;color:var(--text2)">Sin actividad registrada aún</div>';
+}
+
+function renderLogItem(l) {
+ return `<div class="log-item">
+  <div class="log-dot ${l.status}"></div>
+  <div>
+   <span class="log-agent">${l.agent_name}</span>
+   <span class="log-action">${l.action}</span>
+   ${l.target ? `→ <span style="color:var(--gold)">${l.target}</span>` : ''}
+   <div style="font-size:11px;color:var(--text2)">${l.details || l.timestamp || ''}</div>
+  </div>
+ </div>`;
+}
+
+// ===== CHAT =====
+async function renderChat() {
+ const msgs = await fetch(`/api/chat?since_id=${STATE.chatMsgId}`).then(r=>r.json());
+ if (!msgs.length) return;
+ STATE.chatMsgId = Math.max(...msgs.map(m=>m.id));
+ const el = document.getElementById('chatMessages');
+ msgs.forEach(m => {
+  const isUser = m.sender !== 'AXON';
+  el.innerHTML += `<div class="chat-msg ${isUser ? 'user' : 'bot'}">
+   <div class="sender">${m.sender}</div>
+   ${m.message}
+  </div>`;
  });
+ renderChatScroll();
 }
 
-// ===== CHAT WS =====
-function connectChatWS() {
- const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
- const ws = new WebSocket(`${proto}//${location.host}/ws/chat`);
- STATE.chatWs = ws;
- 
- ws.onmessage = e => {
-  try {
-   const data = JSON.parse(e.data);
-   if (data.type === 'history') {
-    renderChatHistory(data.messages);
-   } else if (data.type === 'message') {
-    appendChatMessage(data, true);
-   } else if (data.type === 'typing') {
-    // Show typing indicator
-   } else if (data.type === 'system') {
-    appendSystemMessage(data.message);
-   }
-  } catch(err) {}
- };
- 
- ws.onclose = () => setTimeout(connectChatWS, 3000);
- ws.onerror = () => ws.close();
-}
-
-function renderChatHistory(messages) {
- const el = document.getElementById('chat-messages');
- el.innerHTML = '';
- if (messages && messages.length > 0) {
-  messages.forEach(m => appendChatMessage(m, false));
-  STATE.chatSinceId = Math.max(...messages.map(m => m.id || 0));
- }
+function renderChatScroll() {
+ const el = document.getElementById('chatMessages');
  el.scrollTop = el.scrollHeight;
 }
 
-function appendChatMessage(msg, scroll) {
- const el = document.getElementById('chat-messages');
- const div = document.createElement('div');
- const sender = (msg.sender || 'Natch').toLowerCase();
- div.className = `chat-msg ${sender === 'axon' ? 'axon' : sender === 'system' ? 'system' : 'user'}`;
- const time = msg.timestamp ? new Date(msg.timestamp + 'Z').toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit',hour12:false}) : '';
- div.innerHTML = `
-  ${sender !== 'system' ? `<div class="sender">${msg.sender || 'Natch'}</div>` : ''}
-  <div>${msg.message}</div>
-  ${time ? `<div class="time">${time}</div>` : ''}
- `;
- el.appendChild(div);
- if (scroll !== false) el.scrollTop = el.scrollHeight;
-}
-
-function appendSystemMessage(text) {
- const el = document.getElementById('chat-messages');
- const div = document.createElement('div');
- div.className = 'chat-msg system';
- div.innerHTML = `<div>${text}</div>`;
- el.appendChild(div);
- el.scrollTop = el.scrollHeight;
-}
-
-function sendChat() {
- const input = document.getElementById('chat-input');
- const text = input.value.trim();
- if (!text) return;
+async function sendChatMsg() {
+ const input = document.getElementById('chatInput');
+ const msg = input.value.trim();
+ if (!msg) return;
  input.value = '';
+ await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
  
- // Send via WebSocket
- if (STATE.chatWs && STATE.chatWs.readyState === WebSocket.OPEN) {
-  STATE.chatWs.send(JSON.stringify({
-   action: 'send',
-   sender: 'Natch',
-   message: text
-  }));
- } else {
-  // Fallback to REST
-  fetch('/api/chat/messages', {
-   method: 'POST', headers: {'Content-Type':'application/json'},
-   body: JSON.stringify({sender: 'Natch', message: text})
-  }).catch(e => console.error(e));
- }
- 
- // Show locally immediately
- appendChatMessage({sender: 'Natch', message: text, timestamp: new Date().toISOString()}, true);
+ // Auto-response from AXON
+ const response = generateAxonResponse(msg);
+ setTimeout(async () => {
+  await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender:'AXON',message:response})});
+  renderChat();
+ }, 500);
+ renderChat();
 }
 
-// ===== MISSIONS & PROJECTS =====
-async function loadMissions() {
- try {
-  const r = await fetch('/api/missions');
-  STATE.missions = await r.json();
-  renderMissions();
- } catch(e) { console.error('Missions:', e); }
+function generateAxonResponse(msg) {
+ const lower = msg.toLowerCase();
+ if (lower.includes('tarea') || lower.includes('task')) return '✅ Recibido. Dame los detalles y la creo en el tablero. ¿A qué agente se la asigno?';
+ if (lower.includes('hola') || lower.includes('buenos')) return '¡Bienvenido al Command Center, Natch! 🚀 Todo listo para trabajar. ¿Qué vamos a conquistar hoy?';
+ if (lower.includes('quién') || lower.includes('quien')) return 'Aquí tienes la jerarquía: AXON (CEO) → HERMES → Axon-Life, Axon-Work, Axon-Music. Cada subagente tiene sus unidades y empleados. Revisa la pestaña Agentes para más detalle.';
+ if (lower.includes('gracias')) return '¡Para eso estoy, mi rey! 💪 Codo a codo hacia la conquista total.';
+ return 'Entendido. Estoy monitoreando la jerarquía y las tareas. ¿Necesitas algo específico?';
 }
 
-function renderMissions() {
- const el = document.getElementById('missions-list');
- if (STATE.missions.length === 0) {
-  el.innerHTML = '<div class="text-dim">Sin misiones activas</div>';
-  return;
- }
- el.innerHTML = STATE.missions.map(m => {
-  const counts = m.task_counts || {};
-  const total = Object.values(counts).reduce((a,b)=>a+b, 0);
-  const done = counts.completed || 0;
-  const progress = total > 0 ? Math.round((done/total)*100) : 0;
-  return `<div class="mission-card">
-   <div class="mission-card-h">🎯 ${m.name}</div>
-   <div class="mission-card-d">${m.description || 'Sin descripción'}</div>
-   <div class="flex items-center gap-8 text-xs text-dim" style="margin-top:6px">
-    <span>📌 ${counts.pending || 0} pendientes</span>
-    <span>⚡ ${counts.in_progress || 0} en proceso</span>
-    <span>✅ ${done} completadas</span>
-    <span class="text-cyan">${progress}%</span>
-   </div>
-   <div class="mission-progress"><div class="mission-progress-fill" style="width:${progress}%"></div></div>
-  </div>`;
- }).join('');
- document.getElementById('overview-missions').textContent = STATE.missions.filter(m => m.status === 'active').length;
-}
-
-async function loadProjects() {
- try {
-  const r = await fetch('/api/projects');
-  STATE.projects = await r.json();
-  renderProjects();
- } catch(e) { console.error('Projects:', e); }
-}
-
-function renderProjects() {
- const el = document.getElementById('projects-list');
- if (STATE.projects.length === 0) {
-  el.innerHTML = '<div class="text-dim">Sin proyectos activos</div>';
-  return;
- }
- el.innerHTML = STATE.projects.map(p => `
-  <div class="proj-card">
-   <div class="proj-card-h">
-    <h4>🗂️ ${p.name}</h4>
-    <span class="proj-type">${p.type}</span>
-   </div>
-   <div class="proj-desc">${p.description || ''}</div>
-   <div class="flex items-center justify-between">
-    <span class="text-xs text-dim">${p.status === 'active' ? '🟢 Activo' : '📋 Planeación'}</span>
-    <span class="text-xs text-cyan">${Math.round(p.progress || 0)}%</span>
-   </div>
-   <div class="mission-progress"><div class="mission-progress-fill" style="width:${p.progress||0}%"></div></div>
-  </div>
- `).join('');
-}
-
-// ===== AGENTS MINI (overview) =====
-async function loadConfig() {
- try {
-  const r = await fetch('/api/hierarchy');
-  const hier = await r.json();
-  STATE.agentHierarchy = hier;
-  renderAgentCards(hier);
-  renderAgentTopology();
- } catch(e) { console.error('Hierarchy:', e); }
-}
-
-function renderAgentCards(hier) {
- const el = document.getElementById('agents-mini');
- const agents = hier?.agents || STATE.agentHierarchy?.agents || [];
- if (agents.length === 0) {
-  el.innerHTML = '<div class="text-dim text-sm">Cargando agentes...</div>';
-  return;
- }
- el.innerHTML = agents.map(a => {
-  const c = {bg:a.color+'22', color:a.color};
-  const subIcon = a.type === 'agent' ? '👑' : '🔹';
-  return `<div class="agent-card" style="border-color:${c.color}44">
-   <div class="agent-icon" style="background:${c.bg};color:${c.color}">${subIcon}</div>
-   <div class="agent-info">
-    <div class="agent-name">${a.name}</div>
-    <div class="agent-role">${a.role}</div>
-   </div>
-   <span class="agent-status"><span class="status-dot online"></span>activo</span>
-  </div>`;
- }).join('');
-}
-
-// ===== OVERVIEW STATS =====
-async function loadOverviewStats() {
- try {
-  const r = await fetch('/api/revenue');
-  const rev = await r.json();
-  const totalForecast = (rev.forecast || []).reduce((a,b) => a + (b.total || 0), 0);
-  document.getElementById('overview-revenue').textContent = '$' + Math.round(totalForecast).toLocaleString();
- } catch(e) {}
-}
-
-// ===== UPTIME =====
-async function updateUptime() {
- try {
-  const r = await fetch('/api/health');
-  const h = await r.json();
-  const secs = h.uptime_seconds || 0;
-  const d = Math.floor(secs/86400);
-  const hrs = Math.floor((secs%86400)/3600);
-  const mins = Math.floor((secs%3600)/60);
-  document.getElementById('uptime-display').textContent = `Uptime: ${d}d ${hrs}h ${mins}m`;
- } catch(e) {}
-}
-
-// ===== POLLING LOOP =====
-async function pollData() {
- await Promise.all([
-  loadTasks(),
-  loadMissions(),
-  loadRevenue(),
-  loadProjects(),
+// ===== POLLING =====
+setInterval(async () => {
+ const [t, l] = await Promise.all([
+  fetch('/api/tasks').then(r=>r.json()),
+  fetch('/api/agent-logs?limit=8').then(r=>r.json()),
  ]);
- updateOverviewStats();
-}
+ const changed = JSON.stringify(t) !== JSON.stringify(STATE.tasks);
+ STATE.tasks = t;
+ STATE.logs = l;
+ if (changed) { renderTaskBoard(); renderStats(); }
+ renderMiniLog();
+}, 5000);
 
-function updateOverviewStats() {
- document.getElementById('overview-pending').textContent = STATE.tasks.filter(t => t.status !== 'completed').length;
- const totalForecast = (STATE.revenue?.forecast || []).reduce((a,b) => a + (b.total || 0), 0);
- document.getElementById('overview-revenue').textContent = '$' + Math.round(totalForecast).toLocaleString();
-}
+setInterval(() => renderChat(), 8000);
 
 // ===== INIT =====
-async function init() {
- // Connect WebSockets
- connectSystemWS();
- connectChatWS();
- 
- // Load initial data
- await loadConfig();
- await pollData();
- 
- // Poll for changes every 10s
- setInterval(pollData, 10000);
- 
- // Uptime every 30s
- setInterval(updateUptime, 30000);
- updateUptime();
- 
- // Agent logs every 5s
- setInterval(async () => {
-  await loadAgentLogs();
-  renderAgentLogs();
- }, 5000);
- await loadAgentLogs();
- renderAgentLogs();
- 
- // Update overview revenue periodically
- setInterval(loadOverviewStats, 15000);
- 
- console.log('🔮 ADAM OS Command Center v2 initialized');
-}
-document.addEventListener('DOMContentLoaded', init);
+loadAll();
 </script>
-</body>
-</html>
+</body></html>
