@@ -1,354 +1,370 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ADAM OS · Control Center v0.0.1</title>
+<title>ADAM OS · Control Center</title>
 <style>
-:root{
- --bg:#f4f5f7;
- --surface:#ffffff;
- --navy:#0f172a;
- --slate:#334155;
- --text:#1e293b;
- --text2:#64748b;
- --border:#e2e8f0;
- --blue:#2563eb;
- --blue-l:#3b82f6;
- --gold:#f59e0b;
- --green:#10b981;
- --pink:#ec4899;
- --orange:#f97316;
- --cyan:#06b6d4;
- --radius:8px;
- --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
-}
+:root{--bg:#f4f5f7;--surface:#fff;--navy:#0f172a;--text:#1e293b;--text2:#64748b;--border:#e2e8f0;--shadow:0 1px 3px rgba(0,0,0,.06)}
+[data-theme="dark"]{--bg:#0f1117;--surface:#181b26;--navy:#0c0d14;--text:#e2e8f0;--text2:#7e8a9b;--border:#262938;--shadow:0 1px 3px rgba(0,0,0,.2)}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;line-height:1.5}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-size:13px;line-height:1.5;transition:background .2s,color .2s}
 .hdr{background:var(--navy);color:#fff;padding:0 24px;height:52px;display:flex;align-items:center;gap:32px;position:sticky;top:0;z-index:100}
-.hdr-logo{font-weight:700;font-size:15px;letter-spacing:0;display:flex;align-items:center;gap:8px}
-.hdr-logo span{color:var(--blue-l)}
-.hdr-logo small{font-weight:400;font-size:10px;color:#94a3b8;margin-left:4px;letter-spacing:.3px}
+.hdr-logo{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+.hdr-logo span{color:#3b82f6}.hdr-logo small{font-weight:400;font-size:10px;color:#94a3b8;margin-left:4px}
+.theme-toggle{margin-left:auto;background:none;border:1px solid #2a2d3a;color:#94a3b8;width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px}
+.theme-toggle:hover{background:rgba(255,255,255,.08);color:#fff}
 .nav{display:flex;gap:4px;flex:1}
-.nav a{padding:6px 14px;border-radius:6px;color:#94a3b8;text-decoration:none;font-size:12px;font-weight:500;transition:all .15s;cursor:pointer}
+.nav a{padding:6px 14px;border-radius:6px;color:#94a3b8;text-decoration:none;font-size:12px;font-weight:500;cursor:pointer;transition:.15s}
 .nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
-.nav a.active{color:#fff;background:var(--blue);}
-.wrap{max-width:1360px;margin:0 auto;padding:20px 24px}
-.section{display:none}
-.section.active{display:block}
+.nav a.active{color:#fff;background:#2563eb}
+.wrap{max-width:1400px;margin:0 auto;padding:20px 24px}
+.section{display:none}.section.active{display:block}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;box-shadow:var(--shadow)}
 .stat .n{font-size:22px;font-weight:700;line-height:1.2}
 .stat .l{font-size:11px;color:var(--text2);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;font-weight:500}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
 .card h3{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text)}
-/* Agents */
-.agent-row{display:flex;gap:24px;margin-bottom:20px;overflow-x:auto;padding-bottom:8px}
-.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;min-width:180px;flex:1;box-shadow:var(--shadow)}
-.agent-card .badge{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;margin-bottom:10px;border:2px solid}
-.agent-card .anm{font-weight:600;font-size:14px}
-.agent-card .arol{font-size:11px;color:var(--text2);margin:2px 0 6px}
-.agent-card .apath{font-size:10px;color:var(--text2);font-family:'SF Mono',Consolas,monospace;background:var(--bg);padding:4px 8px;border-radius:4px;display:inline-block}
-.bu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:16px}
-.bu-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
-.bu-card .hdr{display:flex;align-items:center;gap:8px;padding:0 0 10px 0;background:transparent;position:static}
-.bu-card .hdr .nm{font-weight:600;font-size:13px}
-.bu-card .hdr .path{font-size:10px;color:var(--text2);font-family:'SF Mono',Consolas,monospace}
-.bu-card .depts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.bu-card .dept{background:var(--bg);border-radius:6px;padding:8px 10px;flex:1;min-width:140px}
-.bu-card .dept .dnm{font-weight:500;font-size:12px}
-.bu-card .dept .dp{font-size:9px;color:var(--text2);font-family:'SF Mono',Consolas,monospace;margin:2px 0 4px}
-.bu-card .dept .emp{font-size:11px;color:var(--text);padding:2px 0}
-.bu-card .dept .emp-none{font-size:10px;color:var(--text2);font-style:italic}
-.tree-section{margin-bottom:24px}
-.tree-level{display:flex;justify-content:center;gap:16px;margin:6px 0;flex-wrap:wrap}
-.tree-node{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;min-width:120px;text-align:center;box-shadow:var(--shadow);transition:.15s}
-.tree-node:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);transform:translateY(-1px)}
-.tree-node .tnm{font-weight:600;font-size:12px}
-.tree-node .trl{font-size:10px;color:var(--text2)}
-.tree-node .tcnt{font-size:10px;color:var(--text2);margin-top:2px}
-.tree-ln{height:24px;border-left:2px dashed var(--border);margin:0 auto;width:2px}
-/* Tasks */
-.kanban{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.kanban .col{padding:0}
-.kanban .col-h{font-size:12px;font-weight:600;padding:8px 0;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
-.task{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;box-shadow:var(--shadow)}
-.task .ttl{font-weight:600;font-size:12px;margin-bottom:4px}
-.task .tdesc{font-size:11px;color:var(--text2);margin-bottom:4px}
-.task .tmeta{display:flex;gap:6px;font-size:10px;color:var(--text2)}
-.tag{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;text-transform:uppercase}
-.tag.critical{background:#fee2e2;color:#dc2626}
-.tag.high{background:#fed7aa;color:#ea580c}
-.tag.medium{background:#fef3c7;color:#d97706}
-.tag.low{background:#d1fae5;color:#059669}
-/* Logs */
-.log-list{max-height:300px;overflow-y:auto}
-.log{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
-.log:last-child{border:none}
-.log .dot{width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0}
-.dot.completed{background:var(--green)}
-.dot.in_progress{background:var(--blue)}
-.dot.pending{background:var(--text2)}
-.dot.critical{background:var(--pink)}
-/* Chat */
-.chat-box{max-height:400px;overflow-y:auto;margin-bottom:12px;padding:0}
-.chat-msg{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
-.chat-msg .who{font-weight:600;font-size:11px}
-.chat-msg .txt{color:var(--text);margin:2px 0}
-.chat-msg .ts{font-size:10px;color:var(--text2)}
-.chat-input{display:flex;gap:8px}
-.chat-input input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;background:var(--surface)}
-.chat-input input:focus{border-color:var(--blue)}
-.chat-input button{padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);font-weight:500;cursor:pointer;font-size:12px}
-.chat-input button:hover{background:var(--blue-l)}
-/* Footer */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:200;justify-content:center;align-items:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:800px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-hdr h4{font-size:14px;font-weight:600}
+.modal-hdr .close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;padding:4px}
+.modal-body{padding:16px 20px;overflow:auto;flex:1}
+.modal-body textarea{width:100%;min-height:300px;font-family:'SF Mono',Consolas,monospace;font-size:12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:12px;resize:vertical;outline:none}
+.modal-body textarea:focus{border-color:#3b82f6}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--border)}
+.modal-actions button{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none}
+.modal-actions .save{background:#2563eb;color:#fff}
+.modal-actions .save:hover{background:#3b82f6}
+.modal-actions .cancel{background:var(--bg);color:var(--text2)}
+/* Tree explorer */
+.tree-ul{list-style:none;padding-left:0;margin:0}
+.tree-li{padding:2px 0}
+.tree-toggle{cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:4px;font-size:12px;transition:.1s}
+.tree-toggle:hover{background:var(--border)}
+.tree-toggle .ic{width:16px;text-align:center;flex-shrink:0;font-size:10px}
+.tree-toggle .icon-file{color:var(--text2);font-size:12px}
+.tree-toggle .icon-folder{color:#f59e0b}
+.tree-toggle .icon-folder-open{color:#f59e0b}
+.tree-children{padding-left:20px;display:none}
+.tree-children.open{display:block}
+.tree-file{cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:4px;font-size:12px;color:var(--text);transition:.1s}
+.tree-file:hover{background:var(--border);color:var(--blue)}
+.tree-file .ex{font-size:9px;color:var(--text2);margin-left:2px}
+.explorer-panel{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.explorer-panel{grid-template-columns:1fr}}
+.file-list{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:var(--shadow)}
+.file-list .item{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:12px}
+.file-list .item:hover{background:var(--border)}
+.file-list .item .nm{flex:1}.file-list .item .sz{color:var(--text2);font-size:10px}
+.file-list .item .dt{color:var(--text2);font-size:10px}
+/* Agent cards */
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+.agent-card .ahdr{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.agent-card .abadge{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;border:2px solid}
+.agent-card .title{font-weight:600;font-size:15px}.agent-card .role{font-size:11px;color:var(--text2)}
+.agent-card .path{font-size:10px;color:var(--text2);font-family:monospace;background:var(--bg);padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px}
+.bu-block{background:var(--bg);border-radius:8px;padding:12px;margin-bottom:10px}
+.bu-block .bd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bu-block .bname{font-weight:600;font-size:13px}.bu-block .bpath{font-size:10px;color:var(--text2);font-family:monospace}
+.depts{display:flex;flex-wrap:wrap;gap:6px}
+.dept-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;flex:1;min-width:150px}
+.dept-card .dnm{font-weight:500;font-size:12px}
+.dept-card .dpath{font-size:9px;color:var(--text2);font-family:monospace;margin:2px 0}
+.dept-card .emp{font-size:11px;padding:1px 0}
+.dept-card .emp-none{font-size:10px;color:var(--text2);font-style:italic}
+.dept-card .emp a{color:var(--blue-l);cursor:pointer;text-decoration:none;border-bottom:1px dotted transparent}
+.dept-card .emp a:hover{border-bottom-color:var(--blue-l)}
 .ftr{text-align:center;padding:16px;font-size:10px;color:var(--text2);border-top:1px solid var(--border);margin-top:32px}
-@media(max-width:768px){
- .hdr{gap:12px;padding:0 12px}
- .nav a{padding:4px 10px;font-size:11px}
- .wrap{padding:12px}
- .kanban{grid-template-columns:1fr}
- .bu-grid{grid-template-columns:1fr}
-}
 </style>
 </head>
 <body>
 
 <header class="hdr">
- <div class="hdr-logo"><span>▲</span> ADAM OS <small>v0.0.1</small></div>
+ <div class="hdr-logo"><span>▲</span> ADAM OS <small>v0.0.2</small></div>
  <nav class="nav">
   <a class="active" onclick="go('dash')">Dashboard</a>
+  <a onclick="go('explore')">Archivos</a>
   <a onclick="go('agents')">Agentes</a>
-  <a onclick="go('tasks')">Tareas</a>
-  <a onclick="go('logs')">Actividad</a>
   <a onclick="go('chat')">Chat</a>
  </nav>
+ <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Tema">🌙</button>
 </header>
 
 <div class="wrap">
-
-<!-- Stats -->
-<div class="section active" id="sec-dash">
- <div class="stats" id="statsRow"></div>
- <div class="card">
-  <h3>🏛️ Jerarquía del Sistema</h3>
-  <div id="hierTree"></div>
+ <div class="section active" id="sec-dash">
+  <div class="stats" id="statsRow"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+   <div class="card"><h3>🏛️ Jerarquía del Sistema</h3><div id="hierTree"></div></div>
+   <div class="card"><h3>📂 Últimos Archivos</h3><div id="recentFiles"></div></div>
+  </div>
  </div>
-</div>
 
-<!-- Agents -->
-<div class="section" id="sec-agents">
- <div id="agentsFull"></div>
-</div>
-
-<!-- Tasks -->
-<div class="section" id="sec-tasks">
- <div class="kanban" id="taskBoard"></div>
-</div>
-
-<!-- Logs -->
-<div class="section" id="sec-logs">
- <div class="card">
-  <h3>📋 Actividad Reciente</h3>
-  <div class="log-list" id="miniLog"></div>
+ <div class="section" id="sec-explore">
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+   <h3 style="flex:1;font-size:14px;font-weight:600">📁 Filesystem Explorer</h3>
+   <span id="scanPath" style="font-size:10px;color:var(--text2);font-family:monospace"></span>
+  </div>
+  <div class="explorer-panel">
+   <div class="card" style="overflow:auto;max-height:70vh" id="explorerTree"></div>
+   <div class="file-list" id="fileDetail" style="overflow:auto;max-height:70vh"></div>
+  </div>
  </div>
- <div class="card">
-  <h3>📋 Historial Completo</h3>
-  <div class="log-list" id="fullLog"></div>
- </div>
-</div>
 
-<!-- Chat -->
-<div class="section" id="sec-chat">
- <div class="card">
-  <h3>💬 Command Center Chat</h3>
-  <div class="chat-box" id="chatBox"></div>
-  <div class="chat-input">
-   <input id="chatInput" placeholder="Escribe un comando o mensaje..." onkeydown="if(event.key==='Enter')sendChat()">
-   <button onclick="sendChat()">Enviar</button>
+ <div class="section" id="sec-agents">
+  <div id="agentsFull"></div>
+ </div>
+
+ <div class="section" id="sec-chat">
+  <div class="card">
+   <h3>💬 Command Center Chat</h3>
+   <div class="chat-box" id="chatBox" style="max-height:400px;overflow-y:auto;margin-bottom:12px"></div>
+   <div style="display:flex;gap:8px">
+    <input id="chatInput" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:var(--surface);color:var(--text)" placeholder="Mensaje..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button onclick="sendChat()" style="padding:8px 16px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:500;cursor:pointer">Enviar</button>
+   </div>
   </div>
  </div>
 </div>
 
-</div>
+<footer class="ftr">ADAM OS · Control Center — Construyendo el imperio codo a codo</footer>
 
-<footer class="ftr">ADAM OS · Control Center v0.0.1 — Construyendo el imperio codo a codo</footer>
+<!-- FILE EDITOR MODAL -->
+<div class="modal-overlay" id="fileModal">
+ <div class="modal">
+  <div class="modal-hdr"><h4 id="modalTitle">Editar Archivo</h4><button class="close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body"><textarea id="modalContent" spellcheck="false"></textarea></div>
+  <div class="modal-actions">
+   <button class="cancel" onclick="closeModal()">Cancelar</button>
+   <button class="save" onclick="saveFile()">💾 Guardar</button>
+  </div>
+ </div>
+</div>
 
 <script>
 const API='/api';
-let S={hierarchy:[],tasks:[],logs:[],chatId:0};
-const agentColors={AXON:'#06b6d4',HERMES:'#ec4899','Axon-Life':'#10b981','Axon-Work':'#f59e0b','Axon-Music':'#f97316'};
-const agentOrder=['AXON','HERMES','Axon-Life','Axon-Work','Axon-Music'];
+const TS='theme';
+let S={agents:[],tree:null,stats:{}};
+let currentFile=null;
 
-function go(s){document.querySelectorAll('.section,.nav a').forEach(e=>e.classList.remove('active'));document.getElementById('sec-'+s).classList.add('active');document.querySelectorAll('.nav a').forEach((a,i)=>{if((['dash','agents','tasks','logs','chat'])[i]===s)a.classList.add('active')})}
+function toggleTheme(){
+ const h=document.documentElement;
+ const n=h.getAttribute('data-theme')==='dark'?'light':'dark';
+ h.setAttribute('data-theme',n);
+ document.getElementById('themeBtn').textContent=n==='dark'?'🌙':'☀️';
+ localStorage.setItem(TS,n);
+}
+function initTheme(){
+ const s=localStorage.getItem(TS);
+ if(s){document.documentElement.setAttribute('data-theme',s);document.getElementById('themeBtn').textContent=s==='dark'?'🌙':'☀️';}
+}
+
+function go(s){
+ document.querySelectorAll('.section,.nav a').forEach(e=>e.classList.remove('active'));
+ document.getElementById('sec-'+s).classList.add('active');
+ ['dash','explore','agents','chat'].forEach((n,i)=>{if(n===s)document.querySelectorAll('.nav a')[i].classList.add('active')});
+}
 
 async function loadAll(){
- const [h,t,l]=await Promise.all([
-  fetch(API+'/hierarchy').then(r=>r.json()),
-  fetch(API+'/tasks').then(r=>r.json()),
-  fetch(API+'/logs').then(r=>r.json())
- ]);
- S={...S,hierarchy:h,tasks:t,logs:l};
+ const d=await fetch(API+'/scan').then(r=>r.json());
+ S=d;
  renderAll();
 }
 
-function renderAll(){
- renderStats();renderTree();renderBoard();renderAgents();renderMiniLog();renderFullLog();renderChat();
-}
+function renderAll(){renderStats();renderTree();renderAgentCards();renderExplorer();renderRecentFiles()}
 
-// ===== STATS =====
+// STATS
 function renderStats(){
- const t=S.tasks;
- const buCount=S.hierarchy.reduce((s,a)=>s+(a.business_units||[]).length,0);
- const deptCount=S.hierarchy.reduce((s,a)=>s+(a.business_units||[]).reduce((su,bu)=>su+(bu.departments||[]).length,0),0);
- let emps=0;
- S.hierarchy.forEach(a=>(a.business_units||[]).forEach(bu=>(bu.departments||[]).forEach(d=>emps+=(d.employees||[]).length)));
+ const st=S.stats||{};
  document.getElementById('statsRow').innerHTML=`
- <div class="stat"><div class="n" style="color:var(--blue)">${S.hierarchy.length}</div><div class="l">Agentes</div></div>
- <div class="stat"><div class="n" style="color:var(--gold)">${buCount}</div><div class="l">Unidades de Negocio</div></div>
- <div class="stat"><div class="n" style="color:var(--green)">${deptCount}</div><div class="l">Departamentos</div></div>
- <div class="stat"><div class="n" style="color:var(--cyan)">${emps}</div><div class="l">Empleados</div></div>
- <div class="stat"><div class="n" style="color:var(--pink)">${t.length}</div><div class="l">Tareas</div></div>
- <div class="stat"><div class="n" style="color:var(--orange)">${t.filter(x=>x.status==='in_progress').length}</div><div class="l">En Curso</div></div>
-`;
+ <div class="stat"><div class="n" style="color:#3b82f6">${st.agents||0}</div><div class="l">Agentes</div></div>
+ <div class="stat"><div class="n" style="color:#f59e0b">${st.business_units||0}</div><div class="l">Unidades</div></div>
+ <div class="stat"><div class="n" style="color:#10b981">${st.departments||0}</div><div class="l">Departamentos</div></div>
+ <div class="stat"><div class="n" style="color:#06b6d4">${st.employees||0}</div><div class="l">Empleados</div></div>
+ <div class="stat"><div class="n" style="color:#f97316">${st.agents?st.agents*3:0}</div><div class="l">AGENTS.md</div></div>`;
+ if(st.scanned_at) document.getElementById('scanPath').textContent='🕒 '+st.scanned_at;
 }
 
-// ===== TREE =====
+// HIERARCHY TREE
 function renderTree(){
- const agents=S.hierarchy;
- let html='';
- // Row 1: AXON
- html+='<div class="tree-level">';
- agents.filter(a=>a.name==='AXON').forEach(a=>html+=nodeHtml(a));
- html+='</div><div class="tree-ln"></div>';
- // Row 2: HERMES
- html+='<div class="tree-level">';
- agents.filter(a=>a.name==='HERMES').forEach(a=>html+=nodeHtml(a));
- html+='</div><div class="tree-ln"></div>';
- // Row 3: 3 sub-agents
- html+='<div class="tree-level">';
- ['Axon-Life','Axon-Work','Axon-Music'].forEach(sn=>{const a=agents.find(x=>x.name===sn);if(a) html+=nodeHtml(a)});
- html+='</div>';
- // Business units
- html+='<div class="tree-level" style="margin-top:12px;gap:20px">';
- agents.filter(a=>['Axon-Life','Axon-Work','Axon-Music'].includes(a.name)).forEach(a=>{
-  (a.business_units||[]).forEach(bu=>{
-   const depts=(bu.departments||[]).map(d=>`<span style="font-size:10px;background:var(--bg);padding:2px 8px;border-radius:3px;color:var(--text2)">📂 ${d.dir_name}</span>`).join(' ');
-   const empCount=(bu.departments||[]).reduce((s,d)=>s+(d.employees||[]).length,0);
-   html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;min-width:180px;box-shadow:var(--shadow)">
-    <div style="font-weight:600;font-size:12px;color:${bu.color||'var(--gold)'}">${bu.short_name}</div>
-    <div style="font-size:9px;color:var(--text2);font-family:monospace">📁 ${bu.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>
-    <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${depts}</div>
-    <div style="font-size:10px;color:var(--text2);margin-top:6px">👥 ${empCount} empleados</div>
-   </div>`;
+ const agents=S.agents||[];
+ let html='<div style="display:flex;flex-direction:column;gap:4px">';
+ // Simple hierarchy display
+ const order=['AXON','HERMES','Axon-Life','Axon-Work','Axon-Music'];
+ order.forEach(name=>{
+  const a=agents.find(x=>x.name===name);
+  if(!a)return;
+  html+=`<div style="display:flex;align-items:center;gap:6px;margin:2px 0"><span style="color:${a.color||'#3b82f6'};font-weight:600;">${a.name}</span><span style="font-size:10px;color:var(--text2)">📁 ${a.relative}</span></div>`;
+  (a.business_units||[]).forEach(u=>{
+   html+=`<div style="padding-left:24px;margin:2px 0"><span style="font-weight:500;font-size:12px;color:${u.color||'#f59e0b'}">${u.short_name}</span> <span style="font-size:10px;color:var(--text2)">${u.relative}</span></div>`;
+   (u.departments||[]).forEach(d=>{
+    const ec=(d.employees||[]).length?`<span style="color:var(--green);font-size:10px">👥${ec}</span>`:'<span style="color:var(--text2);font-size:10px;font-style:italic">vacío</span>';
+    html+=`<div style="padding-left:44px;font-size:11px;display:flex;gap:4px;margin:1px 0"><span style="color:var(--text2)">📂 ${d.dir_name}/</span>${ec}</div>`;
+   });
   });
  });
  html+='</div>';
  document.getElementById('hierTree').innerHTML=html;
 }
 
-function nodeHtml(a){
- const c=agentColors[a.name]||'var(--blue)';
- const bu=a.business_units||[];
- const tdepts=bu.reduce((s,bu)=>s+(bu.departments||[]).length,0);
- const temps=bu.reduce((s,bu)=>s+bu.departments.reduce((sd,d)=>sd+(d.employees||[]).length,0),0);
- return `<div class="tree-node" onclick="go('agents')" style="cursor:pointer">
-  <div class="tnm" style="color:${c}">${a.name}</div>
-  <div class="trl">${(a.role||'').split('/')[0].trim()}</div>
-  <div class="tcnt">${bu.length} unidad · ${tdepts} dept · ${temps} emp</div>
- </div>`;
+// FILE EXPLORER
+function renderExplorer(){
+ if(!S.tree){document.getElementById('explorerTree').innerHTML='<div style="color:var(--text2)">Cargando...</div>';return}
+ document.getElementById('explorerTree').innerHTML=renderTreeNode(S.tree,'');
+ document.getElementById('fileDetail').innerHTML='<div style="color:var(--text2);text-align:center;padding:40px">Selecciona un archivo para ver su contenido</div>';
 }
 
-// ===== AGENTS =====
-function renderAgents(){
- const agents=S.hierarchy;
+function renderTreeNode(node,path){
+ if(!node||!node.children)return'';
+ const isRoot=!node.relative;
+ const label=isRoot?'📁 adam-os-system':`📂 ${node.name}`;
+ const hasChildren=(node.children||[]).length>0||(node.files||[]).length>0;
+ const display=node.relative||'root';
  let html='';
- agentOrder.forEach(on=>{
+ if(isRoot){
+  html+=`<ul class="tree-ul"><li class="tree-li"><span class="tree-toggle open" onclick="toggleNode(this)"><span class="ic">▼</span><span class="icon-folder-open">📁</span><b>adam-os-system/</b></span><div class="tree-children open">`;
+ } else {
+  html+=`<li class="tree-li"><span class="tree-toggle" onclick="toggleNode(this)"><span class="ic">▶</span>${node.has_agents?'🤖':'📂'}<span style="margin-left:2px">${node.name}/</span></span><div class="tree-children">`;
+ }
+ // Children directories
+ (node.children||[]).forEach(c=>{
+  html+=renderTreeNode(c,path+'/'+c.name);
+ });
+ // Files
+ (node.files||[]).forEach(f=>{
+  const rel=f.relative||(path?path+'/'+f.name:f.name);
+  html+=`<li class="tree-li" style="padding-left:20px"><span class="tree-file" onclick="openFile('${rel}')"><span class="icon-file">📄</span>${f.name}<span class="ex">(${(f.size/1024).toFixed(1)}KB)</span></span></li>`;
+ });
+ if(!isRoot)html+=`</div></li>`;
+ else html+=`</div></li></ul>`;
+ return html;
+}
+
+function toggleNode(el){
+ const ic=el.querySelector('.ic');
+ const ch=el.nextElementSibling;
+ if(ch.classList.contains('open')){
+  ch.classList.remove('open');ic.textContent='▶';
+ } else {
+  ch.classList.add('open');ic.textContent='▼';
+ }
+}
+
+// FILE VIEWER / EDITOR
+async function openFile(relPath){
+ const d=await fetch(API+'/fs/read?path='+encodeURIComponent(relPath)).then(r=>r.json());
+ if(d.error){
+  document.getElementById('fileDetail').innerHTML=`<div style="padding:20px;color:var(--pink)">❌ ${d.error}</div>`;
+  return;
+ }
+ currentFile=relPath;
+ // Show in detail panel
+ const lang=d.name.endsWith('.md')?'markdown':d.name.endsWith('.py')?'python':d.name.endsWith('.json')?'json':d.name.endsWith('.yaml')||d.name.endsWith('.yml')?'yaml':'text';
+ document.getElementById('fileDetail').innerHTML=`
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+   <div><b style="font-size:13px">📄 ${d.name}</b><br><span style="font-size:10px;color:var(--text2)">${d.relative} · ${(d.size/1024).toFixed(1)}KB · mod ${d.modified}</span></div>
+   <button onclick="editFile()" style="padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;color:var(--text)">✏️ Editar</button>
+  </div>
+  <div style="background:var(--bg);border-radius:8px;padding:12px;font-family:'SF Mono',Consolas,monospace;font-size:11px;white-space:pre-wrap;overflow:auto;max-height:500px">${escHtml(d.content)}</div>`;
+}
+
+function editFile(){
+ if(!currentFile)return;
+ document.getElementById('modalTitle').textContent='✏️ Editando: '+currentFile;
+ loadModalContent(currentFile);
+ document.getElementById('fileModal').classList.add('show');
+}
+
+async function loadModalContent(path){
+ const d=await fetch(API+'/fs/read?path='+encodeURIComponent(path)).then(r=>r.json());
+ if(!d.error) document.getElementById('modalContent').value=d.content;
+}
+
+async function saveFile(){
+ const content=document.getElementById('modalContent').value;
+ const r=await fetch(API+'/fs/write',{
+  method:'POST',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({path:currentFile,content})
+ }).then(r=>r.json());
+ if(r.success){
+  closeModal();
+  openFile(currentFile);
+ } else alert('Error: '+r.error);
+}
+
+function closeModal(){
+ document.getElementById('fileModal').classList.remove('show');
+}
+
+// AGENTS PAGE
+function renderAgentCards(){
+ const agents=S.agents||[];
+ const order=['AXON','HERMES','Axon-Life','Axon-Work','Axon-Music'];
+ let html='';
+ order.forEach(on=>{
   const a=agents.find(x=>x.name===on);
   if(!a)return;
-  const c=agentColors[a.name]||'var(--blue)';
-  html+=`<div class="card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-   <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;border:2px solid ${c};color:${c}">${a.name[0]}</div>
-   <div><div style="font-weight:600;font-size:15px;color:${c}">${a.name}</div>
-   <div style="font-size:11px;color:var(--text2)">${a.role}</div>
-   <div style="font-size:10px;color:var(--text2);font-family:monospace">📁 ${a.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div></div>
-  </div>`;
-  for(const bu of (a.business_units||[])){
-   const depts=(bu.departments||[]).map(d=>{
-    const emps=(d.employees||[]).map(e=>`<div class="emp" style="font-size:12px;padding:1px 0">👤 ${e.name} — <span style="color:var(--text2)">${e.role}</span></div>`).join('');
-    return `<div class="dept"><div class="dnm">📂 ${d.dir_name}/</div>
-     <div class="dp">${d.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>
-     ${emps||'<div class="emp-none">Sin empleados</div>'}
-    </div>`;
+  const c=a.color||'#3b82f6';
+  html+=`<div class="agent-card"><div class="ahdr"><div class="abadge" style="color:${c};border-color:${c}">${a.name[0]}</div><div><div class="title" style="color:${c}">${a.name}</div><div class="role">${a.role}</div><div class="path">📁 ${a.relative}</div></div></div>`;
+  (a.business_units||[]).forEach(u=>{
+   const depts=(u.departments||[]).map(d=>{
+    const emps=(d.employees||[]).map(e=>`<div class="emp">👤 ${e.name} <span style="color:var(--text2)">— ${e.role}</span></div>`).join('');
+    const hasMD=(d.files||[]).filter(f=>f.name==='AGENTS.md').length>0;
+    const extFiles=(d.files||[]).filter(f=>f.name!=='AGENTS.md').map(f=>`<span class="tree-file" onclick="openFile('${d.relative+'/'+f.name}')" style="display:inline;font-size:10px">📄 ${f.name}</span>`).join(' ');
+    return `<div class="dept-card"><div class="dnm">📂 ${d.dir_name}/</div><div class="dpath">${d.relative}</div>${emps||'<div class="emp-none">Sin empleados</div>'}${hasMD?`<div style="margin-top:4px"><span class="tree-file" onclick="openFile('${d.relative}/AGENTS.md')" style="display:inline;font-size:10px">🤖 AGENTS.md</span></div>`:''}${extFiles?`<div style="margin-top:2px">${extFiles}</div>`:''}</div>`;
    }).join('');
-   html+=`<div style="background:var(--bg);border-radius:var(--radius);padding:12px;margin-bottom:10px">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-     <span style="font-weight:600;font-size:13px;color:${bu.color||'var(--gold)'}">${bu.name}</span>
-     <span style="font-size:10px;color:var(--text2);font-family:monospace">${bu.dir_path.replace('/home/adamcloud/adam-os-system/','')}</span>
-    </div>
-    <div class="depts">${depts}</div>
-   </div>`;
-  }
+   html+=`<div class="bu-block"><div class="bd"><span class="bname" style="color:${u.color||'#f59e0b'}">${u.name}</span><span class="bpath">${u.relative}</span></div><div class="depts">${depts}</div></div>`;
+  });
   html+='</div>';
  });
  document.getElementById('agentsFull').innerHTML=html;
 }
 
-// ===== TASKS =====
-function renderBoard(){
- const cols={pending:'📌 Pendientes',in_progress:'⚡ En Curso',completed:'✅ Completadas'};
- let html='';
- Object.entries(cols).forEach(([status,label])=>{
-  const items=S.tasks.filter(t=>t.status===status);
-  html+=`<div class="col"><div class="col-h">${label} (${items.length})</div>`;
-  items.forEach(t=>html+=`<div class="task"><div class="ttl">${t.title}</div>
-   <div class="tdesc">${t.description||''}</div>
-   <div class="tmeta"><span class="tag ${t.priority||'medium'}">${(t.priority||'medium').toUpperCase()}</span>
-   <span>${t.agent_name||''}</span></div></div>`);
-  html+='</div>';
- });
- document.getElementById('taskBoard').innerHTML=html;
+// RECENT FILES
+function renderRecentFiles(){
+ let allFiles=[];
+ function walk(node){
+  (node.files||[]).forEach(f=>allFiles.push({name:f.name,rel:f.relative||(node.relative?node.relative+'/'+f.name:f.name),size:f.size}));
+  (node.children||[]).forEach(walk);
+ }
+ if(S.tree)walk(S.tree);
+ allFiles.sort((a,b)=>a.name.localeCompare(b.name));
+ document.getElementById('recentFiles').innerHTML='<div style="display:flex;flex-direction:column;gap:4px">'+
+  allFiles.slice(0,30).map(f=>`<div style="display:flex;align-items:center;gap:6px;padding:2px 4px;border-radius:4px;cursor:pointer;font-size:11px" onclick="openFile('${f.rel}')"><span>📄</span><span style="flex:1">${f.rel}</span><span style="font-size:10px;color:var(--text2)">${(f.size/1024).toFixed(1)}KB</span></div>`).join('')+
+ '</div>';
 }
 
-// ===== LOGS =====
-function renderMiniLog(){
- document.getElementById('miniLog').innerHTML=S.logs.slice(0,5).map(l=>logHtml(l)).join('');
-}
-function renderFullLog(){
- document.getElementById('fullLog').innerHTML=S.logs.length?S.logs.map(l=>logHtml(l)).join(''):'<div style="text-align:center;padding:20px;color:var(--text2)">Sin actividad</div>';
-}
-function logHtml(l){
- return `<div class="log"><div class="dot ${l.status}"></div><div>
-  <span style="font-weight:600">${l.agent_name}</span> <span style="color:var(--text2)">${l.action}</span>
-  ${l.target?`→ <span style="color:var(--gold)">${l.target}</span>`:''}
-  <div style="font-size:10px;color:var(--text2)">${l.details||l.timestamp||''}</div></div></div>`;
-}
-
-// ===== CHAT =====
+// CHAT
 async function renderChat(){
- const msgs=await fetch(API+'/chat?since_id='+S.chatId).then(r=>r.json());
- if(!msgs.length) return;
- S.chatId=msgs[msgs.length-1].id;
+ const msgs=await fetch(API+'/chat?since_id='+(window._chatId||0)).then(r=>r.json());
+ if(!msgs.length)return;
+ window._chatId=msgs[msgs.length-1].id;
  const box=document.getElementById('chatBox');
- msgs.forEach(m=>{
-  box.innerHTML+=`<div class="chat-msg"><div class="who">${m.agent_name||m.sender||'User'}</div><div class="txt">${m.message||m.text}</div><div class="ts">${m.timestamp||''}</div></div>`;
- });
+ msgs.forEach(m=>{box.innerHTML+=`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px"><b style="font-size:11px">${m.agent_name||m.sender||'User'}</b><div style="color:var(--text);margin:2px 0">${m.message||m.text}</div><div style="font-size:10px;color:var(--text2)">${m.timestamp||''}</div></div>`});
  box.scrollTop=box.scrollHeight;
 }
 async function sendChat(){
  const inp=document.getElementById('chatInput');
- const text=inp.value.trim();
- if(!text) return;
+ const t=inp.value.trim();
+ if(!t)return;
  inp.value='';
- await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender:'User',text})});
+ await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender:'Natch',message:t})});
  renderChat();
 }
 
-// ===== INIT =====
+// UTILITIES
+function escHtml(s){return String(s||'')
+ .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// INIT
+initTheme();
 loadAll();
-setInterval(loadAll,15000);
+setInterval(loadAll,60000);
 setInterval(renderChat,5000);
 </script>
-
 </body>
 </html>

@@ -8,6 +8,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 
+from scanner import scan as fs_scan, read_file as fs_read, write_file as fs_write
+
+_DB = "/home/adamcloud/adam-os-dashboard/data/dashboard.db"
+
 from database import (
     init_db, get_agents, get_business_units, get_employees, get_full_hierarchy,
     get_tasks, create_task, update_task, delete_task,
@@ -50,6 +54,10 @@ class ChatMessage(BaseModel):
     sender: str = "Natch"
     message: str
     session_id: str = "default"
+
+class FileWrite(BaseModel):
+    path: str
+    content: str
 
 # ===== HIERARCHY =====
 @app.get("/api/hierarchy")
@@ -109,6 +117,29 @@ async def chat_messages(session_id: str = "default", since_id: int = 0):
 @app.post("/api/chat")
 async def new_chat_message(msg: ChatMessage):
     return add_chat_message(msg.sender, msg.message, msg.session_id)
+
+# ===== FILESYSTEM SCAN (LIVE) =====
+@app.get("/api/scan")
+async def scan_fs():
+    """Scan the real filesystem and return live data."""
+    return fs_scan()
+
+# ===== FILE EDITOR =====
+@app.get("/api/fs/read")
+async def file_read(path: str):
+    """Read a file by its relative path from adam-os-system/"""
+    data = fs_read(path)
+    if data is None:
+        return {"error": f"File not found: {path}"}
+    return data
+
+@app.post("/api/fs/write")
+async def file_write(data: FileWrite):
+    """Write content to a file by its relative path."""
+    result = fs_write(data.path, data.content)
+    if "error" in result:
+        return {"error": result["error"]}
+    return result
 
 # ===== HEALTH =====
 @app.get("/api/health")
