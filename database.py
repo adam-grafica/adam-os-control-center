@@ -40,6 +40,7 @@ def init_db():
             title TEXT NOT NULL,
             description TEXT DEFAULT '',
             assigned_to TEXT DEFAULT 'Axon',
+            department_id INTEGER DEFAULT NULL,
             status TEXT DEFAULT 'pending',
             mission_id INTEGER REFERENCES missions(id),
             priority TEXT DEFAULT 'medium',
@@ -93,6 +94,28 @@ def init_db():
             progress REAL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+        
+        -- Hierarchy: Agents (coordinators) → Departments (life aspects) → Employees (workers)
+        CREATE TABLE IF NOT EXISTS departments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            short_name TEXT DEFAULT '',
+            agent_name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            parent_id INTEGER REFERENCES departments(id),
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE TABLE IF NOT EXISTS employees (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            role TEXT DEFAULT '',
+            department_id INTEGER REFERENCES departments(id),
+            stack TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ''')
     
     # Seed data if empty
@@ -101,6 +124,13 @@ def init_db():
         _seed_data(c)
     
     conn.commit()
+    
+    # Migration: add department_id to tasks if missing
+    try:
+        c.execute("ALTER TABLE tasks ADD COLUMN department_id INTEGER DEFAULT NULL")
+    except:
+        pass  # Already exists
+    
     conn.close()
 
 def _seed_data(c):
@@ -190,6 +220,41 @@ def _seed_data(c):
         "INSERT INTO chat_messages (sender, message, session_id) VALUES (?,?,?)",
         ("Axon", "¡Bienvenido al ADAM OS Command Center, Natch! 🚀 Estoy aquí. ¿Qué vamos a conquistar hoy?", "default")
     )
+    
+    # Departments (Hierarchy: Agent → Life Aspect → Departments)
+    departments = [
+        ("Axon", "CORE", "AXON", "Centro de comando y coordinación CEO", None),
+        ("Hermes", "ASSISTANT", "HERMES", "Asistente principal y enrutador de tareas", None),
+        ("Axon-Life", "LIFE", "Axon-Life", "Vida personal: salud, finanzas, hogar", None),
+        ("Axon-Work", "WORK", "Axon-Work", "Trabajo: AdamGráfica, Midisoft, proyectos", None),
+        ("Axon-Music", "MUSIC", "Axon-Music", "Producción musical y ecosistema MIDI", None),
+        ("ADAM OS Command Center", "INFRA", "Axon-Work", "Infraestructura y plataforma de control", 4),
+        ("AdamGráfica Agencia", "AGENCIA", "Axon-Work", "Agencia 95% IA - branding, web, redes", 4),
+        ("Midisoft Labs", "MIDI", "Axon-Music", "Investigación y desarrollo MIDI+IA", 5),
+        ("Finanzas Personales", "FINANZAS", "Axon-Life", "Gestión financiera y contable", 3),
+    ]
+    for name, short, agent, desc, parent in departments:
+        c.execute(
+            "INSERT INTO departments (name, short_name, agent_name, description, parent_id) VALUES (?,?,?,?,?)",
+            (name, short, agent, desc, parent)
+        )
+    
+    # Employees (workers from Notion stacks)
+    employees = [
+        ("Gen Pro", "Generador de Contenido PRO", 7, "adamgrafica"),
+        ("CODE ARCHITECT", "Arquitecto de Código", 7, "adamgrafica"),
+        ("THE RETOUCH WIZARD", "Retoque y Post-producción", 7, "adamgrafica"),
+        ("HERALD", "Monitor de Infraestructura", 6, "adamgrafica"),
+        ("CMO Agent", "Estrategia de Marketing", 7, "adamgrafica"),
+        ("Composer AI", "Composición Musical IA", 8, "midisoft"),
+        ("Sound Engineer", "Ingeniero de Sonido", 8, "midisoft"),
+        ("MIDI Developer", "Desarrollo MIDI + IA", 8, "midisoft"),
+    ]
+    for name, role, dept, stack in employees:
+        c.execute(
+            "INSERT INTO employees (name, role, department_id, stack) VALUES (?,?,?,?)",
+            (name, role, dept, stack)
+        )
 
 def get_tasks(status=None, mission_id=None):
     conn = get_db()
@@ -210,12 +275,12 @@ def get_tasks(status=None, mission_id=None):
     conn.close()
     return dict_list(rows)
 
-def create_task(title, description="", assigned_to="Axon", mission_id=None, priority="medium"):
+def create_task(title, description="", assigned_to="Axon", mission_id=None, priority="medium", department_id=None):
     conn = get_db()
     c = conn.cursor()
     c.execute(
-        "INSERT INTO tasks (title, description, assigned_to, mission_id, priority) VALUES (?,?,?,?,?)",
-        (title, description, assigned_to, mission_id, priority)
+        "INSERT INTO tasks (title, description, assigned_to, mission_id, priority, department_id) VALUES (?,?,?,?,?,?)",
+        (title, description, assigned_to, mission_id, priority, department_id)
     )
     task_id = c.lastrowid
     conn.commit()
@@ -228,7 +293,7 @@ def create_task(title, description="", assigned_to="Axon", mission_id=None, prio
     return dict_row(task)
 
 def update_task(task_id, **kwargs):
-    allowed = {"title", "description", "assigned_to", "status", "priority", "progress", "mission_id"}
+    allowed = {"title", "description", "assigned_to", "status", "priority", "progress", "mission_id", "department_id"}
     updates = {k: v for k, v in kwargs.items() if k in allowed}
     if not updates:
         return None
@@ -374,11 +439,74 @@ def mark_chat_responded(msg_id):
     conn.commit()
     conn.close()
 
+# === Hierarchy: Departments & Employees ===
+
+def get_departments():
+    conn = get_db()
+    c = conn.cursor()
+    rows = c.execute(
+        "SELECT * FROM departments ORDER BY agent_name, id"
+    ).fetchall()
+    conn.close()
+    return dict_list(rows)
+
+def get_employees(department_id=None):
+    conn = get_db()
+    c = conn.cursor()
+    if department_id:
+        rows = c.execute(
+            "SELECT * FROM employees WHERE department_id=? ORDER BY name",
+            (department_id,)
+        ).fetchall()
+    else:
+        rows = c.execute(
+            "SELECT * FROM employees ORDER BY department_id, name"
+        ).fetchall()
+    conn.close()
+    return dict_list(rows)
+
+def get_agent_hierarchy():
+    """Returns the full agent → department → employee hierarchy tree."""
+    conn = get_db()
+    c = conn.cursor()
+    
+    # Top-level agents (coordinators)
+    agents = [
+        {"name": "AXON", "role": "God/CEO", "color": "#00f0ff", "type": "agent"},
+        {"name": "HERMES", "role": "Brazo Derecho", "color": "#ff00e5", "type": "agent"},
+        {"name": "Axon-Life", "role": "Depto. Vida", "color": "#00ff88", "type": "subagent"},
+        {"name": "Axon-Work", "role": "Depto. Trabajo", "color": "#ffd700", "type": "subagent"},
+        {"name": "Axon-Music", "role": "Depto. Música", "color": "#4488ff", "type": "subagent"},
+    ]
+    
+    # Get departments for each subagent
+    subagent_deps = {}
+    for agent in ["Axon-Life", "Axon-Work", "Axon-Music"]:
+        deps = dict_list(c.execute(
+            "SELECT * FROM departments WHERE agent_name=? AND parent_id IS NOT NULL",
+            (agent,)
+        ).fetchall())
+        # Get employees for each department
+        for dep in deps:
+            dep["employees"] = dict_list(c.execute(
+                "SELECT * FROM employees WHERE department_id=?", (dep["id"],)
+            ).fetchall())
+        subagent_deps[agent] = deps
+    
+    conn.close()
+    
+    return {
+        "agents": agents,
+        "subagent_departments": subagent_deps,
+    }
+
 if __name__ == "__main__":
     init_db()
     print("✅ Database initialized successfully!")
     print(f"   Path: {DB_PATH}")
     print(f"   Tasks: {len(get_tasks())}")
     print(f"   Missions: {len(get_missions())}")
+    print(f"   Departments: {len(get_departments())}")
+    print(f"   Employees: {len(get_employees())}")
     print(f"   Agent Logs: {len(get_agent_logs())}")
     print(f"   Chat Messages: {len(get_chat_messages())}")

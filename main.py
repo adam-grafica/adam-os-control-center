@@ -81,6 +81,7 @@ from database import (
     get_agent_logs, log_agent_action,
     get_chat_messages, add_chat_message,
     get_projects, get_pending_chats, mark_chat_responded,
+    get_departments, get_employees, get_agent_hierarchy,
 )
 
 @app.on_event("startup")
@@ -313,6 +314,7 @@ class TaskCreate(BaseModel):
     assigned_to: str = "Axon"
     mission_id: Optional[int] = None
     priority: str = "medium"
+    department_id: Optional[int] = None
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
@@ -335,6 +337,7 @@ async def new_task(task: TaskCreate):
         assigned_to=task.assigned_to,
         mission_id=task.mission_id,
         priority=task.priority,
+        department_id=task.department_id,
     )
     # Broadcast new task to chat clients
     await manager.broadcast_chat({
@@ -378,6 +381,23 @@ async def list_missions():
 @app.post("/api/missions")
 async def new_mission(mission: MissionCreate):
     return create_mission(mission.name, mission.description)
+
+# ---------------------------------------------------------------------------
+# Departments & Employees (hierarchy)
+# ---------------------------------------------------------------------------
+
+@app.get("/api/departments")
+async def list_departments():
+    return get_departments()
+
+@app.get("/api/employees")
+async def list_employees(department_id: Optional[int] = None):
+    return get_employees(department_id=department_id)
+
+@app.get("/api/hierarchy")
+async def hierarchy():
+    """Full agent → department → employee tree."""
+    return get_agent_hierarchy()
 
 # ---------------------------------------------------------------------------
 # Revenue

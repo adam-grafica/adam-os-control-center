@@ -84,7 +84,7 @@ body{
 .sys-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
 
 /* ===== TASK BOARD ===== */
-.task-board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;min-height:300px}
+.task-board{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;min-height:300px}
 .task-col{
  background:var(--bg3); border-radius:var(--radius); padding:12px;
  display:flex;flex-direction:column;gap:8px;
@@ -392,7 +392,7 @@ body{
  <div class="card">
   <div class="card-h"><span>🤖</span> Agent Topology — Comunicación en Vivo</div>
   <div class="agent-topo">
-   <svg class="topo-svg" id="topo-svg" viewBox="0 0 800 320"></svg>
+   <svg class="topo-svg" id="topo-svg" viewBox="0 0 800 380"></svg>
   </div>
  </div>
  <div class="card" style="margin-top:12px">
@@ -432,14 +432,14 @@ body{
    <option value="critical">Prioridad: Crítica</option>
    <option value="low">Prioridad: Baja</option>
   </select>
-  <select id="task-assign">
-   <option value="Axon">Asignar a: Axon</option>
-   <option value="CODE ARCHITECT">Asignar a: CODE ARCHITECT</option>
-   <option value="Gen Pro">Asignar a: Gen Pro</option>
-   <option value="THE RETOUCH WIZARD">Asignar a: The Retouch Wizard</option>
-   <option value="HERALD">Asignar a: Herald</option>
-   <option value="CMO Agent">Asignar a: CMO Agent</option>
-  </select>
+  <div class="flex gap-8">
+   <select id="task-assign" style="flex:1">
+    <option value="Axon">Asignar a: Axon</option>
+   </select>
+   <select id="task-department" style="flex:1">
+    <option value="">Departamento (opcional)</option>
+   </select>
+  </div>
   <select id="task-mission">
    <option value="">Sin misión</option>
   </select>
@@ -536,7 +536,8 @@ async function loadTasks() {
 function renderTaskBoard() {
  const cols = [
   { key: 'pending', label: '📌 Por Hacer' },
-  { key: 'in_progress', label: '⚡ En Proceso' },
+  { key: 'in_progress', label: '⚡️ En Proceso' },
+  { key: 'realizado', label: '💪🏻 Realizado' },
   { key: 'review', label: '🔍 Revisión' },
   { key: 'completed', label: '✅ Completado' },
  ];
@@ -564,8 +565,9 @@ function renderTaskBoard() {
      </div>
      ${progress > 0 ? `<div class="sys-bar" style="margin-top:6px"><div class="sys-bar-fill low" style="width:${progress}%"></div></div>` : ''}
      <div class="task-actions">
-      ${col.key === 'pending' ? '<button onclick="moveTask('+t.id+',\'in_progress\')">▶ Iniciar</button><button onclick="moveTask('+t.id+',\'completed\')">✔ Hecho</button>' : ''}
-      ${col.key === 'in_progress' ? '<button onclick="moveTask('+t.id+',\'review\')">🔍 Revisar</button><button onclick="moveTask('+t.id+',\'completed\')">✔ Completar</button>' : ''}
+      ${col.key === 'pending' ? '<button onclick="moveTask('+t.id+',\'in_progress\')">▶ Iniciar</button>' : ''}
+      ${col.key === 'in_progress' ? '<button onclick="moveTask('+t.id+',\'realizado\')">💪 Hecho</button>' : ''}
+      ${col.key === 'realizado' ? '<button onclick="moveTask('+t.id+',\'review\')">🔍 Revisar</button><button onclick="moveTask('+t.id+',\'in_progress\')">↩ Volver</button>' : ''}
       ${col.key === 'review' ? '<button onclick="moveTask('+t.id+',\'completed\')">✅ Aprobar</button><button onclick="moveTask('+t.id+',\'in_progress\')">↩ Volver</button>' : ''}
       ${col.key === 'completed' ? '<button onclick="moveTask('+t.id+',\'in_progress\')">↩ Reabrir</button>' : ''}
       ${col.key === 'pending' ? '<button onclick="deleteTask('+t.id+')" style="color:var(--red)">✕</button>' : ''}
@@ -621,6 +623,31 @@ async function showNewTaskModal() {
   });
  } catch(e) {}
  
+ // Load employees into assign selector
+ try {
+  const r = await fetch('/api/employees');
+  const employees = await r.json();
+  const asel = document.getElementById('task-assign');
+  asel.innerHTML = '<option value="Axon">Axon (CEO)</option><option value="Hermes">Hermes</option>';
+  employees.forEach(e => {
+   asel.innerHTML += `<option value="${e.name}">${e.name}</option>`;
+  });
+ } catch(e) {}
+ 
+ // Load departments
+ try {
+  const hier = STATE.agentHierarchy;
+  if (hier && hier.subagent_departments) {
+   const dsel = document.getElementById('task-department');
+   dsel.innerHTML = '<option value="">Departamento (opcional)</option>';
+   Object.entries(hier.subagent_departments).forEach(([agent, deps]) => {
+    deps.forEach(d => {
+     dsel.innerHTML += `<option value="${d.id}">${d.short_name} — ${agent.replace('Axon-','')}</option>`;
+    });
+   });
+  }
+ } catch(e) {}
+ 
  setTimeout(() => document.getElementById('task-title').focus(), 100);
 }
 
@@ -637,6 +664,7 @@ async function createTaskFromModal() {
   priority: document.getElementById('task-priority').value,
   assigned_to: document.getElementById('task-assign').value,
   mission_id: document.getElementById('task-mission').value || null,
+  department_id: document.getElementById('task-department').value || null,
  };
  try {
   await fetch('/api/tasks', {
@@ -756,40 +784,90 @@ function renderRevenueServices() {
 }
 
 // ===== AGENT TOPOLOGY =====
-function renderAgentTopology() {
+async function renderAgentTopology() {
  const svg = document.getElementById('topo-svg');
- const agents = [
-  {id:'axon', name:'Axon', x:400, y:50, color:'var(--cyan)'},
-  {id:'hermes', name:'Hermes', x:200, y:120, color:'var(--magenta)'},
-  {id:'genpro', name:'Gen Pro', x:600, y:120, color:'var(--gold)'},
-  {id:'architect', name:'CODE\nARCHITECT', x:100, y:230, color:'var(--blue)'},
-  {id:'wizard', name:'Retouch\nWizard', x:300, y:230, color:'var(--orange)'},
-  {id:'herald', name:'HERALD', x:500, y:230, color:'var(--green)'},
-  {id:'cmo', name:'CMO\nAgent', x:700, y:230, color:'var(--text-dim)'},
- ];
+ let dataset;
+ try {
+  const r = await fetch('/api/hierarchy');
+  dataset = await r.json();
+ } catch(e) {
+  svg.innerHTML = '<text x="400" y="160" fill="#666680" text-anchor="middle" font-size="14">Cargando jerarquía...</text>';
+  return;
+ }
  
- // Connections: [from, to, label, status]
- const connections = [
-  [0,1,'route','active'], [0,2,'generate','active'], [0,3,'design','active'],
-  [0,4,'visual','idle'], [1,5,'deploy','active'], [2,6,'marketing','idle'],
-  [3,4,'review','active'], [0,5,'monitor','active'], [0,6,'brief','idle'],
- ];
+ const agents = dataset.agents || [];
  
- // Draw lines first (behind nodes)
- let linesHtml = connections.map(([f,t,label,status]) => {
-  const from = agents[f], to = agents[t];
-  const cls = status === 'active' ? 'agent-line active' : 'agent-line';
-  return `<path class="${cls}" d="M${from.x},${from.y} Q${(from.x+to.x)/2},${(from.y+to.y)/2+20} ${to.x},${to.y}"/>`;
- }).join('');
+ // Layout coordinates
+ const nodes = [];
+ const cx = 400; // center x
+ 
+ // AXON at top
+ nodes.push({id:'axon', label:'AXON', x:cx, y:40, color:'#00f0ff', type:'agent', pulse:true});
+ 
+ // HERMES below
+ nodes.push({id:'hermes', label:'HERMES', x:cx, y:100, color:'#ff00e5', type:'agent', pulse:false});
+ 
+ // Sub-agents row
+ const subAgents = agents.filter(a => a.type === 'subagent');
+ const subStartX = cx - (subAgents.length - 1) * 100;
+ subAgents.forEach((a, i) => {
+  nodes.push({id:a.name, label:a.name.replace('Axon-',''), x:subStartX + i*200, y:170, color:a.color, type:'subagent', pulse:false});
+ });
+ 
+ // Connections
+ let linesHtml = '';
+ 
+ // AXON → HERMES
+ linesHtml += `<path class="agent-line active" d="M${cx},55 Q${cx},75 ${cx},85"/>`;
+ 
+ // HERMES → Subagents
+ subAgents.forEach((a, i) => {
+  const nx = subStartX + i*200;
+  linesHtml += `<path class="agent-line" d="M${cx},115 Q${(cx+nx)/2},145 ${nx},155"/>`;
+ });
+ 
+ // Subagents → Departments
+ const deps = dataset.subagent_departments || {};
+ Object.entries(deps).forEach(([agentName, departments], idx) => {
+  const agent = subAgents.find(a => a.name === agentName);
+  if (!agent || !departments) return;
+  const agentIdx = subAgents.indexOf(agent);
+  const ax = subStartX + agentIdx * 200;
+  const ay = 185;
+  
+  departments.forEach((dep, di) => {
+   const dx = ax - 80 + di * 160;
+   const dy = 230;
+   const dColor = agent.color;
+   
+   nodes.push({id:`dep-${dep.id}`, label:dep.short_name, x:dx, y:dy, color:dColor, type:'department', pulse:false});
+   linesHtml += `<path class="agent-line" d="M${ax},${ay} Q${(ax+dx)/2},${(ay+dy)/2} ${dx},${dy-10}"/>`;
+   
+   // Employees under each department
+   (dep.employees || []).forEach((emp, ei) => {
+    const ex = dx - 50 + ei * 100;
+    const ey = 280;
+    nodes.push({id:`emp-${emp.id}`, label:emp.name.replace(' ','\n'), x:ex, y:ey, color:'var(--text-dim)', type:'employee', pulse:false, small:true});
+    linesHtml += `<path class="agent-line" d="M${dx},${dy+15} Q${(dx+ex)/2},${(dy+ey)/2} ${ex},${ey-10}"/>`;
+   });
+  });
+ });
  
  // Draw nodes
- let nodesHtml = agents.map((a, i) => `
-  <g class="agent-node" onclick="showAgentInfo('${a.name}')">
-   <circle class="agent-node-bg" cx="${a.x}" cy="${a.y}" r="22" fill="var(--bg2)" stroke="${a.color}" stroke-width="2"/>
-   <circle cx="${a.x}" cy="${a.y}" r="6" fill="${a.color}" class="${i === 0 ? 'agent-pulse' : ''}"/>
-   <text x="${a.x}" y="${a.y+20}" class="agent-label">${a.name}</text>
-  </g>
- `).join('');
+ let nodesHtml = nodes.map(n => {
+  const r = n.small ? 14 : n.type === 'department' ? 16 : 22;
+  const labelY = n.small ? n.y+22 : n.y+20;
+  const labelClass = n.small ? 'agent-label' : 'agent-label name';
+  const pulseClass = n.pulse ? 'agent-pulse' : '';
+  const fillColor = n.small ? 'var(--bg2)' : 'var(--bg2)';
+  const strokeColor = n.type === 'department' ? n.color : n.color;
+  
+  return `<g class="agent-node" onclick="showAgentInfo('${n.label.replace('\n',' ')}')">
+   <circle class="agent-node-bg" cx="${n.x}" cy="${n.y}" r="${r}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2"/>
+   <circle cx="${n.x}" cy="${n.y}" r="${n.type==='agent'?6:4}" fill="${n.color}" class="${pulseClass}"/>
+   <text x="${n.x}" y="${labelY}" class="${labelClass}" font-size="${n.small?8:9}">${n.label}</text>
+  </g>`;
+ }).join('');
  
  svg.innerHTML = linesHtml + nodesHtml;
 }
@@ -982,32 +1060,31 @@ function renderProjects() {
 // ===== AGENTS MINI (overview) =====
 async function loadConfig() {
  try {
-  const r = await fetch('/api/config');
-  const cfg = await r.json();
-  STATE.agents = cfg.agents || [];
-  renderAgentCards();
+  const r = await fetch('/api/hierarchy');
+  const hier = await r.json();
+  STATE.agentHierarchy = hier;
+  renderAgentCards(hier);
   renderAgentTopology();
- } catch(e) { console.error('Config:', e); }
+ } catch(e) { console.error('Hierarchy:', e); }
 }
 
-function renderAgentCards() {
+function renderAgentCards(hier) {
  const el = document.getElementById('agents-mini');
- el.innerHTML = STATE.agents.map(a => {
-  const colors = {
-   'Axon':{bg:'rgba(0,240,255,.15)',color:'var(--cyan)'},
-   'Hermes':{bg:'rgba(255,0,229,.15)',color:'var(--magenta)'},
-   'Gen Pro':{bg:'rgba(255,215,0,.15)',color:'var(--gold)'},
-   'CODE ARCHITECT':{bg:'rgba(68,136,255,.15)',color:'var(--blue)'},
-  };
-  const c = colors[a.name] || {bg:'var(--bg3)',color:'var(--text)'};
-  const statusDot = a.status === 'online' ? 'online' : 'standby' ? 'busy' : 'offline';
-  return `<div class="agent-card" style="border-color:${c.color}33">
-   <div class="agent-icon" style="background:${c.bg};color:${c.color}">${a.name[0]}</div>
+ const agents = hier?.agents || STATE.agentHierarchy?.agents || [];
+ if (agents.length === 0) {
+  el.innerHTML = '<div class="text-dim text-sm">Cargando agentes...</div>';
+  return;
+ }
+ el.innerHTML = agents.map(a => {
+  const c = {bg:a.color+'22', color:a.color};
+  const subIcon = a.type === 'agent' ? '👑' : '🔹';
+  return `<div class="agent-card" style="border-color:${c.color}44">
+   <div class="agent-icon" style="background:${c.bg};color:${c.color}">${subIcon}</div>
    <div class="agent-info">
     <div class="agent-name">${a.name}</div>
     <div class="agent-role">${a.role}</div>
    </div>
-   <span class="agent-status"><span class="status-dot ${statusDot}"></span>${a.status}</span>
+   <span class="agent-status"><span class="status-dot online"></span>activo</span>
   </div>`;
  }).join('');
 }
