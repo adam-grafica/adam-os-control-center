@@ -1,6 +1,6 @@
 """
-ADAM OS Dashboard — FastAPI Backend
-=====================================
+ADAM OS Command Center — FastAPI Backend v2
+=============================================
 Endpoints:
   GET /                         → static/index.html
   GET /api/health               → status, hermes, version, uptime
@@ -9,28 +9,58 @@ Endpoints:
   GET /api/notion/projects      → Notion page (projects)
   GET /api/notion/clients       → Notion page (clients)
   GET /api/config               → static config data
+  WS  /ws/chat                  → bidirectional real-time chat
+  WS  /ws/system                → real-time system stats (emits every 2s)
+  GET /api/tasks                → list tasks (filter: ?status=&mission_id=)
+  POST /api/tasks               → create task
+  PUT  /api/tasks/{id}          → update task
+  DELETE /api/tasks/{id}        → delete task
+  GET /api/missions             → list missions
+  POST /api/missions            → create mission
+  GET /api/revenue              → actual vs forecast
+  POST /api/revenue             → add revenue entry
+  GET /api/agents/logs          → agent communication logs
+  GET /api/chat/messages        → chat history
+  POST /api/chat/messages       → send chat message (REST)
+  GET /api/projects             → active projects
+  GET /api/chat/pending         → pending unanswered messages
+  POST /api/chat/respond/{id}   → mark message as responded
 """
 
 import os
 import time
+import json
 import logging
+import asyncio
 from datetime import datetime
 from typing import Optional
 
 import psutil
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Query
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 # ---------------------------------------------------------------------------
 # App bootstrap
 # ---------------------------------------------------------------------------
 
-app = FastAPI(title="ADAM OS Dashboard API", version="1.0.0")
+START_TIME = time.time()
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+os.makedirs(STATIC_DIR, exist_ok=True)
 
-# CORS — allow all origins for dashboard use
+# Notion config
+NOTION_API_KEY = os.environ.get("NOTION_API_KEY", "")
+NOTION_BASE = "https://api.notion.com/v1"
+NOTION_VERSION = "2025-09-03"
+
+NOTION_TASKS_DB = "1ba5f8c7-cf88-80f1-9547-000bde777ec3"
+NOTION_PROJECTS_PAGE = "1b85f8c7-cf88-804c-8a6b-cfa82e81e110"
+NOTION_CLIENTS_PAGE = "1b85f8c7-cf88-8014-af33-ea3e9fa54823"
+
+app = FastAPI(title="ADAM OS Command Center", version="2.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -40,445 +70,564 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Globals & start time
+# Database
 # ---------------------------------------------------------------------------
 
-START_TIME = time.time()
-logger = logging.getLogger("adam-os-dashboard")
+from database import (
+    init_db,
+    get_tasks, create_task, update_task, delete_task,
+    get_missions, create_mission,
+    get_revenue, add_revenue,
+    get_agent_logs, log_agent_action,
+    get_chat_messages, add_chat_message,
+    get_projects, get_pending_chats, mark_chat_responded,
+)
+
+@app.on_event("startup")
+async def startup():
+    init_db()
+    logging.info("Database initialized")
 
 # ---------------------------------------------------------------------------
-# Static files — serve /app/static/index.html on GET /
+# WebSocket manager
 # ---------------------------------------------------------------------------
 
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
-os.makedirs(STATIC_DIR, exist_ok=True)
+class ConnectionManager:
+    def __init__(self):
+        self.chat_connections: list[WebSocket] = []
+        self.system_connections: list[WebSocket] = []
 
-# Serve /app/static/ as static files (images, css, etc.)
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    async def connect_chat(self, ws: WebSocket):
+        await ws.accept()
+        self.chat_connections.append(ws)
 
+    def disconnect_chat(self, ws: WebSocket):
+        if ws in self.chat_connections:
+            self.chat_connections.remove(ws)
+
+    async def connect_system(self, ws: WebSocket):
+        await ws.accept()
+        self.system_connections.append(ws)
+
+    def disconnect_system(self, ws: WebSocket):
+        if ws in self.system_connections:
+            self.system_connections.remove(ws)
+
+    async def broadcast_chat(self, message: dict):
+        dead = []
+        for ws in self.chat_connections:
+            try:
+                await ws.send_json(message)
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            self.disconnect_chat(ws)
+
+manager = ConnectionManager()
+
+# ---------------------------------------------------------------------------
+# Static files
+# ---------------------------------------------------------------------------
 
 @app.get("/")
-async def root():
-    """Serve the single-page dashboard frontend."""
+async def index():
     index_path = os.path.join(STATIC_DIR, "index.html")
-    if os.path.isfile(index_path):
-        return FileResponse(index_path, media_type="text/html")
-    return JSONResponse(
-        {"error": "Frontend not built yet — index.html missing from /app/static/"},
-        status_code=404,
-    )
-
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return JSONResponse({"error": "index.html not found"}, status_code=404)
 
 # ---------------------------------------------------------------------------
-# Notion helper
+# Health, System, Config
 # ---------------------------------------------------------------------------
-
-NOTION_API_KEY = os.environ.get("NOTION_API_KEY", "")
-NOTION_VERSION = "2025-09-03"
-NOTION_BASE = "https://api.notion.com/v1"
-
-# Task DB    1ba5f8c7-cf88-80f1-9547-000bde777ec3
-# Projects   2885f8c7-cf88-80b1-99a5-fd7eeb12abf8
-# Clients    2885f8c7-cf88-80aa-8ee4-eec921b03a0e
-NOTION_TASKS_DB = "1ba5f8c7-cf88-80f1-9547-000bde777ec3"
-NOTION_PROJECTS_PAGE = "2885f8c7-cf88-80b1-99a5-fd7eeb12abf8"
-NOTION_CLIENTS_PAGE = "2885f8c7-cf88-80aa-8ee4-eec921b03a0e"
-
-# Simple TTL cache (seconds)
-_cache: dict = {}
-
-
-def _cache_get(key: str):
-    entry = _cache.get(key)
-    if entry and (time.time() - entry["ts"] < 60):
-        return entry["data"]
-    return None
-
-
-def _cache_set(key: str, data):
-    _cache[key] = {"ts": time.time(), "data": data}
-
-
-def _notion_headers():
-    return {
-        "Authorization": f"Bearer {NOTION_API_KEY}",
-        "Notion-Version": NOTION_VERSION,
-        "Content-Type": "application/json",
-    }
-
-
-async def _notion_query_database(database_id: str) -> list:
-    """Query a Notion database and return the results array."""
-    cache_key = f"db:{database_id}"
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        return cached
-
-    if not NOTION_API_KEY:
-        logger.warning("NOTION_API_KEY not set")
-        return []
-
-    url = f"{NOTION_BASE}/data_sources/{database_id}/query"
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.post(url, headers=_notion_headers(), json={})
-
-    if resp.status_code != 200:
-        logger.error("Notion DB query failed: %s %s", resp.status_code, resp.text)
-        return []
-
-    data = resp.json()
-    results = data.get("results", [])
-    _cache_set(cache_key, results)
-    return results
-
-
-async def _notion_get_page(page_id: str) -> Optional[dict]:
-    """Retrieve a Notion page."""
-    cache_key = f"page:{page_id}"
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        return cached
-
-    if not NOTION_API_KEY:
-        logger.warning("NOTION_API_KEY not set")
-        return None
-
-    url = f"{NOTION_BASE}/pages/{page_id}"
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.get(url, headers=_notion_headers())
-
-    if resp.status_code != 200:
-        logger.error("Notion page get failed: %s %s", resp.status_code, resp.text)
-        return None
-
-    data = resp.json()
-    _cache_set(cache_key, data)
-    return data
-
-
-async def _notion_get_blocks(block_id: str) -> list:
-    """Retrieve children blocks of a page/block."""
-    cache_key = f"blocks:{block_id}"
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        return cached
-
-    if not NOTION_API_KEY:
-        return []
-
-    url = f"{NOTION_BASE}/blocks/{block_id}/children"
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.get(url, headers=_notion_headers())
-
-    if resp.status_code != 200:
-        logger.error("Notion blocks get failed: %s %s", resp.status_code, resp.text)
-        return []
-
-    data = resp.json()
-    results = data.get("results", [])
-    _cache_set(cache_key, results)
-    return results
-
-
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
-
 
 @app.get("/api/health")
 async def health():
-    uptime_s = int(time.time() - START_TIME)
     return {
         "status": "online",
         "hermes": "online",
-        "version": "1.0.0",
-        "uptime_seconds": uptime_s,
+        "version": "2.0.0",
+        "uptime_seconds": int(time.time() - START_TIME),
+        "timestamp": datetime.utcnow().isoformat(),
     }
-
 
 @app.get("/api/system")
 async def system():
-    cpu_percent = psutil.cpu_percent(interval=0.3)
-    cpu_cores = psutil.cpu_count()
-
     mem = psutil.virtual_memory()
-    total_gb = round(mem.total / (1024 ** 3), 2)
-    used_gb = round(mem.used / (1024 ** 3), 2)
-
     disk = psutil.disk_usage("/")
-    disk_total = round(disk.total / (1024 ** 3), 2)
-    disk_used = round(disk.used / (1024 ** 3), 2)
-
+    cpu_percent = psutil.cpu_percent(interval=0.1)
     return {
-        "cpu": {"percent": cpu_percent, "cores": cpu_cores},
-        "memory": {"total_gb": total_gb, "used_gb": used_gb, "percent": mem.percent},
-        "disk": {"total_gb": disk_total, "used_gb": disk_used, "percent": disk.percent},
-    }
-
-
-# ----- Notion: Tareas -------------------------------------------------------
-
-
-def _parse_task_status(properties: dict) -> str:
-    """Extract task status from Notion DB row properties."""
-    for key in ("Estado", "Status", "status", "estado", "State"):
-        prop = properties.get(key, {})
-        if prop.get("type") == "status":
-            status_obj = prop.get("status", {})
-            if status_obj:
-                return status_obj.get("name", "Sin estado")
-        if prop.get("type") == "select":
-            sel = prop.get("select")
-            if sel:
-                return sel.get("name", "Sin estado")
-    return "Sin estado"
-
-
-def _parse_task_name(properties: dict) -> str:
-    """Extract task title from Notion DB row properties."""
-    for key in ("Tarea", "Name", "name", "Nombre", "nombre", "Title", "title"):
-        prop = properties.get(key, {})
-        if prop.get("type") == "title":
-            title_arr = prop.get("title", [])
-            if title_arr:
-                return "".join(t.get("plain_text", "") for t in title_arr)
-    return "Sin nombre"
-
-
-def _parse_task_progress(properties: dict):
-    """Extract progress (0-100) if available."""
-    for key in ("Progress", "progress", "Progreso", "progreso", "%", "Done"):
-        prop = properties.get(key, {})
-        if prop.get("type") == "number":
-            return prop.get("number")
-        if prop.get("type") == "rich_text":
-            rt = prop.get("rich_text", [])
-            if rt:
-                txt = "".join(t.get("plain_text", "") for t in rt)
-                try:
-                    return int(txt.replace("%", ""))
-                except (ValueError, TypeError):
-                    return None
-    return None
-
-
-@app.get("/api/notion/tasks")
-async def notion_tasks():
-    items = await _notion_query_database(NOTION_TASKS_DB)
-
-    parsed = []
-    for row in items:
-        props = row.get("properties", {})
-        parsed.append({
-            "name": _parse_task_name(props),
-            "status": _parse_task_status(props),
-            "progress": _parse_task_progress(props),
-        })
-
-    total = len(parsed)
-    por_hacer = sum(1 for t in parsed if t["status"].lower() in ("por hacer", "to do", "pendiente", "backlog"))
-    en_proceso = sum(1 for t in parsed if t["status"].lower() in ("en proceso", "in progress", "doing", "progreso"))
-    completado = sum(1 for t in parsed if t["status"].lower() in ("completado", "done", "completo", "terminado", "hecho"))
-
-    return {
-        "total": total,
-        "por_hacer": por_hacer,
-        "en_proceso": en_proceso,
-        "completado": completado,
-        "items": parsed,
-    }
-
-
-# ----- Notion: Proyectos ----------------------------------------------------
-
-
-def _extract_text_from_blocks(blocks: list) -> str:
-    """Simple extraction of paragraph text from Notion blocks."""
-    texts = []
-    for block in blocks:
-        block_type = block.get("type", "")
-        content = block.get(block_type, {})
-        rich_text = content.get("rich_text", [])
-        for rt in rich_text:
-            texts.append(rt.get("plain_text", ""))
-    return "\n".join(texts)
-
-
-@app.get("/api/notion/projects")
-async def notion_projects():
-    # Get the page properties and child blocks
-    page = await _notion_get_page(NOTION_PROJECTS_PAGE)
-    blocks = await _notion_get_blocks(NOTION_PROJECTS_PAGE)
-
-    # Try to extract structured data from page properties
-    projects = []
-    active_count = 0
-
-    if page:
-        props = page.get("properties", {})
-        # Some pages might have a relation to a DB
-        # Try to find project-like properties
-        for key, val in props.items():
-            if val.get("type") == "relation":
-                # Could be a relation to projects DB
-                pass
-
-    # Parse blocks to extract project info (name, status, type)
-    # This is heuristic — depends on how blocks are structured
-    current_project = {}
-    for block in blocks:
-        btype = block.get("type", "")
-        content = block.get(btype, {})
-        rich_text = content.get("rich_text", [])
-        text = "".join(t.get("plain_text", "") for t in rich_text).strip()
-
-        if not text:
-            continue
-
-        # Heuristic: H2/H3 headings might be project names
-        if btype in ("heading_2", "heading_3"):
-            if current_project:
-                projects.append(current_project)
-            current_project = {"name": text, "status": "En Proceso", "type": ""}
-            active_count += 1
-        elif btype == "paragraph" and current_project:
-            if "status" in text.lower() or "proceso" in text.lower() or "completado" in text.lower():
-                current_project["status"] = text.split(":")[-1].strip() if ":" in text else text
-            elif current_project.get("type") == "":
-                current_project["type"] = text
-
-    if current_project:
-        projects.append(current_project)
-
-    # If blocks didn't yield structured data, try querying child database
-    if not projects:
-        # Maybe the page contains a linked database — query child pages
-        child_db_id = None
-        for block in blocks:
-            if block.get("type") == "child_database":
-                child_db_id = block.get("id")
-                break
-
-        if child_db_id:
-            items = await _notion_query_database(child_db_id)
-            for row in items:
-                props = row.get("properties", {})
-                name = _parse_task_name(props)
-                status = _parse_task_status(props)
-                projects.append({
-                    "name": name,
-                    "status": status,
-                    "type": "",
-                })
-                if status.lower() in ("en proceso", "in progress", "doing"):
-                    active_count += 1
-
-    return {
-        "active": active_count,
-        "projects": projects,
-    }
-
-
-# ----- Notion: Clientes -----------------------------------------------------
-
-
-@app.get("/api/notion/clients")
-async def notion_clients():
-    page = await _notion_get_page(NOTION_CLIENTS_PAGE)
-    blocks = await _notion_get_blocks(NOTION_CLIENTS_PAGE)
-
-    total = 0
-    active = 0
-    prospect = 0
-    inactive = 0
-
-    # Try to extract from page properties
-    if page:
-        props = page.get("properties", {})
-        for key, val in props.items():
-            if val.get("type") == "number":
-                name_lower = key.lower()
-                if "total" in name_lower:
-                    total = val.get("number", 0)
-                elif "active" in name_lower or "activo" in name_lower:
-                    active = val.get("number", 0)
-                elif "prospect" in name_lower:
-                    prospect = val.get("number", 0)
-                elif "inactive" in name_lower or "inactivo" in name_lower:
-                    inactive = val.get("number", 0)
-
-    # If no properties with numbers, try parsing blocks for linked DB
-    if total == 0 and active == 0 and prospect == 0 and inactive == 0:
-        child_db_id = None
-        for block in blocks:
-            if block.get("type") == "child_database":
-                child_db_id = block.get("id")
-                break
-
-        if child_db_id:
-            items = await _notion_query_database(child_db_id)
-            for row in items:
-                props = row.get("properties", {})
-                status = _parse_task_status(props)
-                total += 1
-                s_lower = status.lower()
-                if s_lower in ("active", "activo"):
-                    active += 1
-                elif s_lower in ("prospect", "prospecto", "potencial"):
-                    prospect += 1
-                elif s_lower in ("inactive", "inactivo", "archived"):
-                    inactive += 1
-
-    return {
-        "total": total,
-        "active": active,
-        "prospect": prospect,
-        "inactive": inactive,
-    }
-
-
-# ----- Config (static) ------------------------------------------------------
-
-
-CONFIG_DATA = {
-    "stacks": {
-        "adamgrafica": {
-            "name": "AdamGráfica",
-            "type": "Agencia de Marketing",
-            "services": ["Branding", "Redes Sociales", "Diseño Gráfico", "Marketing Digital"],
-            "description": "Agencia 95% IA - Valparaíso, Chile",
-            "since": 2018,
+        "cpu": {
+            "percent": cpu_percent,
+            "cores": psutil.cpu_count(),
+            "load_avg": [round(x, 2) for x in psutil.getloadavg()],
         },
-        "midisoft": {
-            "name": "Midisoft",
-            "type": "Agencia de Desarrollo",
-            "services": ["Tauri Apps", "TypeScript/Rust", "Sistemas IA", "MIDI AI Ecosystem"],
-            "description": "Agentic Development Environment",
-            "since": 2024,
+        "memory": {
+            "total_gb": round(mem.total / (1024**3), 2),
+            "used_gb": round(mem.used / (1024**3), 2),
+            "percent": mem.percent,
         },
-    },
-    "agents": [
-        {"name": "Hermes", "role": "Meta-Agent Router", "status": "online"},
-        {"name": "Axon", "role": "Executive Orchestrator", "status": "online"},
-        {"name": "Gen Pro", "role": "Sistema de Prompts", "status": "online"},
-        {"name": "CODE ARCHITECT", "role": "Arquitecto de Software", "status": "online"},
-        {"name": "THE RETOUCH WIZARD", "role": "Director Visual", "status": "standby"},
-        {"name": "HERALD", "role": "Custodio Dev (Perplexity)", "status": "standby"},
-        {"name": "CMO Agent", "role": "Marketing (Perplexity)", "status": "standby"},
-        {"name": "Gen Asesor Coach", "role": "Notion + Proyectos", "status": "online"},
-    ],
-    "routers": [
-        {"name": "Router Core", "mode": "Activo", "description": "Rutas por modo: Ejecutor/Desarrollador/Pesado"},
-        {"name": "MCP Gateway", "mode": "Activo", "description": "Contexto compartido entre agentes"},
-        {"name": "Kanban Orchestrator", "mode": "Activo", "description": "Delegación y planificación"},
-    ],
-}
-
+        "disk": {
+            "total_gb": round(disk.total / (1024**3), 2),
+            "used_gb": round(disk.used / (1024**3), 2),
+            "percent": disk.percent,
+        },
+        "timestamp": datetime.utcnow().isoformat(),
+    }
 
 @app.get("/api/config")
 async def config():
-    return CONFIG_DATA
+    return {
+        "stacks": {
+            "adamgrafica": {
+                "name": "AdamGráfica",
+                "type": "Agencia de Marketing",
+                "services": ["Branding", "Redes Sociales", "Diseño Gráfico", "Marketing Digital"],
+                "active_projects": 1,
+            },
+            "midisoft": {
+                "name": "Midisoft",
+                "type": "Agencia de Desarrollo",
+                "services": ["Tauri Apps", "TypeScript/Rust", "Sistemas IA", "MIDI AI Ecosystem"],
+                "active_projects": 1,
+            },
+        },
+        "agents": [
+            {"name": "Axon", "role": "Executive Orchestrator", "status": "online"},
+            {"name": "Hermes", "role": "Meta-Agent Router", "status": "online"},
+            {"name": "Gen Pro", "role": "Sistema de Prompts", "status": "online"},
+            {"name": "CODE ARCHITECT", "role": "Arquitecto de Software", "status": "online"},
+            {"name": "THE RETOUCH WIZARD", "role": "Director Visual", "status": "standby"},
+            {"name": "HERALD", "role": "Custodio Dev", "status": "standby"},
+            {"name": "CMO Agent", "role": "Marketing", "status": "standby"},
+            {"name": "Gen Asesor Coach", "role": "Notion + Proyectos", "status": "online"},
+        ],
+        "routers": [
+            {"name": "Router Core", "role": "Orquestador decisiones 100% free"},
+            {"name": "Router Expert", "role": "Tareas complejas vía modelos premium"},
+            {"name": "Router Canales", "role": "Workflows de contenido multicanal"},
+        ],
+    }
 
+# ---------------------------------------------------------------------------
+# WebSocket: Real-time system stats (push every 2s)
+# ---------------------------------------------------------------------------
+
+@app.websocket("/ws/system")
+async def websocket_system(ws: WebSocket):
+    await manager.connect_system(ws)
+    try:
+        while True:
+            mem = psutil.virtual_memory()
+            disk = psutil.disk_usage("/")
+            cpu = psutil.cpu_percent(interval=0.1)
+            data = {
+                "type": "system",
+                "timestamp": datetime.utcnow().isoformat(),
+                "cpu": {"percent": cpu, "cores": psutil.cpu_count()},
+                "memory": {
+                    "total_gb": round(mem.total / (1024**3), 2),
+                    "used_gb": round(mem.used / (1024**3), 2),
+                    "percent": mem.percent,
+                },
+                "disk": {
+                    "total_gb": round(disk.total / (1024**3), 2),
+                    "used_gb": round(disk.used / (1024**3), 2),
+                    "percent": disk.percent,
+                },
+            }
+            await ws.send_json(data)
+            await asyncio.sleep(2)
+            # Check if client sent a message (disconnect detection)
+            try:
+                msg = await asyncio.wait_for(ws.receive_text(), timeout=0.01)
+                if msg == "ping":
+                    await ws.send_json({"type": "pong"})
+            except asyncio.TimeoutError:
+                pass
+            except Exception:
+                break
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        manager.disconnect_system(ws)
+
+# ---------------------------------------------------------------------------
+# WebSocket: Chat (bidirectional)
+# ---------------------------------------------------------------------------
+
+@app.websocket("/ws/chat")
+async def websocket_chat(ws: WebSocket):
+    await manager.connect_chat(ws)
+    try:
+        # Send recent chat history
+        history = get_chat_messages()
+        await ws.send_json({"type": "history", "messages": history})
+
+        while True:
+            data = await ws.receive_text()
+            msg = json.loads(data)
+            action = msg.get("action", "send")
+            
+            if action == "send":
+                sender = msg.get("sender", "Natch")
+                message = msg.get("message", "")
+                
+                # Save to DB
+                saved = add_chat_message(sender, message)
+                
+                # Broadcast to all connected clients
+                await manager.broadcast_chat({
+                    "type": "message",
+                    "id": saved["id"],
+                    "sender": sender,
+                    "message": message,
+                    "timestamp": saved["timestamp"],
+                })
+                
+                # If from user, auto-generate a response placeholder
+                if sender != "Axon":
+                    log_agent_action("Natch", "chat_input", message[:60])
+                    
+            elif action == "typing":
+                await manager.broadcast_chat({
+                    "type": "typing",
+                    "sender": msg.get("sender", "Natch"),
+                })
+                
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        manager.disconnect_chat(ws)
+
+# ---------------------------------------------------------------------------
+# Tasks CRUD
+# ---------------------------------------------------------------------------
+
+class TaskCreate(BaseModel):
+    title: str
+    description: str = ""
+    assigned_to: str = "Axon"
+    mission_id: Optional[int] = None
+    priority: str = "medium"
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    assigned_to: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    progress: Optional[float] = None
+    mission_id: Optional[int] = None
+
+@app.get("/api/tasks")
+async def list_tasks(status: Optional[str] = None, mission_id: Optional[int] = None):
+    return get_tasks(status=status, mission_id=mission_id)
+
+@app.post("/api/tasks")
+async def new_task(task: TaskCreate):
+    result = create_task(
+        title=task.title,
+        description=task.description,
+        assigned_to=task.assigned_to,
+        mission_id=task.mission_id,
+        priority=task.priority,
+    )
+    # Broadcast new task to chat clients
+    await manager.broadcast_chat({
+        "type": "system",
+        "message": f"📋 Nueva tarea creada: **{task.title}** → {task.assigned_to}",
+    })
+    return result
+
+@app.put("/api/tasks/{task_id}")
+async def edit_task(task_id: int, task: TaskUpdate):
+    updates = {k: v for k, v in task.dict().items() if v is not None}
+    result = update_task(task_id, **updates)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    if "status" in updates:
+        await manager.broadcast_chat({
+            "type": "system",
+            "message": f"🔄 Tarea #{task_id} cambió a **{updates['status']}**: {result['title'][:50]}",
+        })
+    
+    return result
+
+@app.delete("/api/tasks/{task_id}")
+async def remove_task(task_id: int):
+    delete_task(task_id)
+    return {"status": "deleted"}
+
+# ---------------------------------------------------------------------------
+# Missions
+# ---------------------------------------------------------------------------
+
+class MissionCreate(BaseModel):
+    name: str
+    description: str = ""
+
+@app.get("/api/missions")
+async def list_missions():
+    return get_missions()
+
+@app.post("/api/missions")
+async def new_mission(mission: MissionCreate):
+    return create_mission(mission.name, mission.description)
+
+# ---------------------------------------------------------------------------
+# Revenue
+# ---------------------------------------------------------------------------
+
+class RevenueCreate(BaseModel):
+    service_name: str
+    amount: float
+    note: str = ""
+
+@app.get("/api/revenue")
+async def revenue():
+    return get_revenue()
+
+@app.post("/api/revenue")
+async def create_revenue(rev: RevenueCreate):
+    add_revenue(rev.service_name, rev.amount, rev.note)
+    return {"status": "ok"}
+
+# ---------------------------------------------------------------------------
+# Agent Logs
+# ---------------------------------------------------------------------------
+
+@app.get("/api/agents/logs")
+async def agent_logs(limit: int = Query(50, ge=1, le=200)):
+    return get_agent_logs(limit=limit)
+
+@app.post("/api/agents/logs")
+async def create_agent_log(data: dict):
+    log_agent_action(
+        data.get("agent_name", "unknown"),
+        data.get("action", "unknown"),
+        data.get("target", ""),
+        data.get("status", "success"),
+        data.get("details", ""),
+    )
+    return {"status": "ok"}
+
+# ---------------------------------------------------------------------------
+# Chat (REST fallback)
+# ---------------------------------------------------------------------------
+
+class ChatSend(BaseModel):
+    sender: str = "Natch"
+    message: str
+    session_id: str = "default"
+
+@app.get("/api/chat/messages")
+async def chat_messages(since_id: int = 0, session_id: str = "default"):
+    return get_chat_messages(session_id=session_id, since_id=since_id)
+
+@app.post("/api/chat/messages")
+async def send_chat_message(msg: ChatSend):
+    saved = add_chat_message(msg.sender, msg.message, msg.session_id)
+    # Broadcast via WebSocket
+    await manager.broadcast_chat({
+        "type": "message",
+        "id": saved["id"],
+        "sender": msg.sender,
+        "message": msg.message,
+        "timestamp": saved["timestamp"],
+        "via": "rest",
+    })
+    return saved
+
+@app.get("/api/chat/pending")
+async def pending_chats():
+    """Get unanswered user messages (for Axon to poll)"""
+    return get_pending_chats()
+
+@app.post("/api/chat/respond/{msg_id}")
+async def respond_chat(msg_id: int):
+    """Mark a chat message as responded"""
+    mark_chat_responded(msg_id)
+    return {"status": "ok"}
+
+# ---------------------------------------------------------------------------
+# Projects
+# ---------------------------------------------------------------------------
+
+@app.get("/api/projects")
+async def projects():
+    return get_projects()
+
+# ---------------------------------------------------------------------------
+# Notion endpoints (unchanged)
+# ---------------------------------------------------------------------------
+
+async def _notion_query_database(database_id: str):
+    if not NOTION_API_KEY:
+        return {"error": "NOTION_API_KEY not configured"}
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(
+            f"{NOTION_BASE}/data_sources/{database_id}/query",
+            headers={
+                "Authorization": f"Bearer {NOTION_API_KEY}",
+                "Notion-Version": NOTION_VERSION,
+                "Content-Type": "application/json",
+            },
+            json={},
+        )
+        if resp.status_code != 200:
+            return {"error": resp.text}
+        data = resp.json()
+        results = data.get("results", data.get("data", {}).get("results", []))
+        parsed = []
+        for item in results:
+            props = item.get("properties", {})
+            parsed.append({
+                "id": item.get("id", ""),
+                "name": _parse_prop_title(props),
+                "status": _parse_prop_status(props),
+                "progress": _parse_prop_number(props),
+                "due_date": _parse_prop_date(props),
+            })
+        return {"total": len(parsed), "items": parsed}
+
+def _parse_prop_title(props: dict) -> str:
+    for key in ("Tarea", "Name", "Nombre", "name", "title"):
+        prop = props.get(key)
+        if prop is None:
+            continue
+        ptype = prop.get("type", "")
+        if ptype == "title":
+            titles = prop.get("title", [])
+            if titles and isinstance(titles[0], dict):
+                return titles[0].get("plain_text", "")
+            if isinstance(titles, list) and titles:
+                return str(titles[0])
+        elif ptype == "rich_text":
+            texts = prop.get("rich_text", [])
+            if texts:
+                return "".join(t.get("plain_text", "") for t in texts)
+    return "Sin título"
+
+def _parse_prop_status(props: dict) -> str:
+    for key in ("Estado", "Status", "status", "estado"):
+        prop = props.get(key)
+        if prop is None:
+            continue
+        ptype = prop.get("type", "")
+        if ptype == "status":
+            st = prop.get("status", {})
+            if st and isinstance(st, dict):
+                return st.get("name", "Sin estado")
+        elif ptype == "select":
+            sel = prop.get("select", {})
+            if sel and isinstance(sel, dict):
+                return sel.get("name", "Sin estado")
+    return "Por hacer"
+
+def _parse_prop_number(props: dict) -> float | None:
+    for key in ("Progreso", "Progress", "progress"):
+        prop = props.get(key)
+        if prop is None:
+            continue
+        if prop.get("type") == "number":
+            val = prop.get("number")
+            return float(val) if val is not None else None
+    return None
+
+def _parse_prop_date(props: dict) -> str | None:
+    for key in ("Fecha límite", "Fecha", "Date", "date", "due_date"):
+        prop = props.get(key)
+        if prop is None:
+            continue
+        if prop.get("type") == "date":
+            d = prop.get("date", {})
+            if d and isinstance(d, dict):
+                return d.get("start")
+    return None
+
+async def _notion_read_page(page_id: str):
+    if not NOTION_API_KEY:
+        return {"error": "NOTION_API_KEY not configured"}
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.get(
+            f"{NOTION_BASE}/data_sources/{page_id}",
+            headers={
+                "Authorization": f"Bearer {NOTION_API_KEY}",
+                "Notion-Version": NOTION_VERSION,
+            },
+        )
+        if resp.status_code != 200:
+            return {"error": resp.text}
+        data = resp.json()
+        props = data.get("properties", {})
+        parsed = []
+        for key, prop in props.items():
+            if prop.get("type") == "rich_text":
+                texts = prop.get("rich_text", [])
+                text = "".join(t.get("plain_text", "") for t in texts)
+                if text.strip():
+                    parsed.append({"name": key, "value": text})
+        return {"properties": parsed}
+
+async def _notion_query_children(page_id: str):
+    if not NOTION_API_KEY:
+        return {"error": "NOTION_API_KEY not configured"}
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.get(
+            f"{NOTION_BASE}/blocks/{page_id}/children",
+            headers={
+                "Authorization": f"Bearer {NOTION_API_KEY}",
+                "Notion-Version": NOTION_VERSION,
+            },
+        )
+        if resp.status_code != 200:
+            return {"error": resp.text}
+        data = resp.json()
+        results = data.get("results", [])
+        parsed = []
+        for block in results:
+            btype = block.get("type", "")
+            bdata = block.get(btype, {})
+            if btype == "heading_2":
+                texts = bdata.get("rich_text", [])
+                text = "".join(t.get("plain_text", "") for t in texts)
+                parsed.append({"type": "heading", "text": text})
+            elif btype in ("paragraph", "bulleted_list_item", "numbered_list_item"):
+                texts = bdata.get("rich_text", [])
+                text = "".join(t.get("plain_text", "") for t in texts)
+                if text.strip():
+                    parsed.append({"type": "text", "text": text})
+            elif btype == "to_do":
+                texts = bdata.get("rich_text", [])
+                text = "".join(t.get("plain_text", "") for t in texts)
+                checked = bdata.get("checked", False)
+                if text.strip():
+                    parsed.append({"type": "todo", "text": text, "checked": checked})
+            elif btype == "child_database":
+                parsed.append({"type": "database_ref", "title": bdata.get("title", "Sub-DB"), "id": block.get("id")})
+        return {"items": parsed}
+
+@app.get("/api/notion/tasks")
+async def notion_tasks():
+    return await _notion_query_database(NOTION_TASKS_DB)
+
+@app.get("/api/notion/projects")
+async def notion_projects():
+    # Try reading the page + children
+    page = await _notion_read_page(NOTION_PROJECTS_PAGE)
+    children = await _notion_query_children(NOTION_PROJECTS_PAGE)
+    return {"page": page, "children": children}
+
+@app.get("/api/notion/clients")
+async def notion_clients():
+    page = await _notion_read_page(NOTION_CLIENTS_PAGE)
+    children = await _notion_query_children(NOTION_CLIENTS_PAGE)
+    return {"page": page, "children": children}
 
 # ---------------------------------------------------------------------------
 # Entry point
@@ -486,6 +635,4 @@ async def config():
 
 if __name__ == "__main__":
     import uvicorn
-
-    port = int(os.environ.get("PORT", 8080))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)
