@@ -1,392 +1,313 @@
 <!DOCTYPE html>
-<html lang="es"><head>
+<html lang="es">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ADAM OS v3.1</title>
+<title>ADAM OS · Control Center v0.0.1</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
 :root{
- --bg:#0a0a0f; --bg2:#12121a; --bg3:#1a1a25;
- --text:#e0e0ef; --text2:#8888a0;
- --cyan:#00f0ff; --pink:#ff00e5; --gold:#ffd700;
- --green:#00ff88; --blue:#4488ff; --orange:#ff6600;
- --red:#ff3344; --purple:#8855ff;
- --border:#2a2a3a;
- --radius:12px; --radius-sm:8px;
- font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif
+ --bg:#f4f5f7;
+ --surface:#ffffff;
+ --navy:#0f172a;
+ --slate:#334155;
+ --text:#1e293b;
+ --text2:#64748b;
+ --border:#e2e8f0;
+ --blue:#2563eb;
+ --blue-l:#3b82f6;
+ --gold:#f59e0b;
+ --green:#10b981;
+ --pink:#ec4899;
+ --orange:#f97316;
+ --cyan:#06b6d4;
+ --radius:8px;
+ --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
 }
-body{background:var(--bg);color:var(--text);min-height:100vh;display:flex}
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:var(--bg2)}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-.sidebar{width:190px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);padding:20px 10px;display:flex;flex-direction:column;gap:2px}
-.sidebar .logo{font-size:16px;font-weight:800;color:var(--cyan);margin-bottom:16px;letter-spacing:-0.5px}
-.sidebar .logo span{color:var(--gold)}
-.nav-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:13px;transition:.2s}
-.nav-item:hover{background:var(--bg3);color:var(--text)}
-.nav-item.active{background:rgba(0,240,255,.08);color:var(--cyan)}
-.nav-item .icon{font-size:15px}
-.main{flex:1;padding:18px 20px;overflow-y:auto;max-height:100vh}
-.page{display:none}
-.page.active{display:block}
-.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.page-header h1{font-size:20px;font-weight:700}
-.page-header .sub{font-size:12px;color:var(--text2);margin-top:2px}
-
-/* STATS */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:16px}
-.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px}
-.stat .n{font-size:22px;font-weight:700}
-.stat .l{font-size:11px;color:var(--text2);margin-top:1px}
-
-/* TREE */
-.tree-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;overflow-x:auto}
-.tree{display:flex;flex-direction:column;align-items:center;gap:2px}
-.tree-row{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
-.node{background:var(--bg3);border:2px solid;border-radius:var(--radius);padding:8px 14px;text-align:center;min-width:90px;cursor:pointer;transition:.2s}
-.node:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,240,255,.12)}
-.node .nm{font-size:13px;font-weight:700}
-.node .rl{font-size:10px;color:var(--text2);margin-top:1px}
-.node .cnt{font-size:10px;color:var(--text2);opacity:.6;margin-top:3px}
-.node .path{font-size:9px;color:var(--text2);opacity:.4;margin-top:2px;font-family:monospace}
-.tree-ln{width:2px;height:14px;background:var(--border)}
-.tree-bu{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;padding:6px 0}
-.bu-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;min-width:110px;font-size:11px}
-.bu-card .bu-nm{font-weight:600;font-size:12px;margin-bottom:3px}
-.bu-card .bu-path{font-size:9px;color:var(--text2);opacity:.5;font-family:monospace;margin-bottom:4px}
-.bu-card .dept-tag{display:inline-block;background:var(--bg);padding:2px 6px;border-radius:4px;font-size:9px;margin:2px 2px 0 0;color:var(--text2)}
-.bu-card .emp{font-size:10px;color:var(--text2);margin-top:2px;padding-left:6px;border-left:2px solid var(--cyan)}
-
-/* TASK BOARD */
-.board{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
-.col{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px;min-height:180px}
-.col-hdr{font-size:12px;font-weight:600;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
-.col-hdr .cnt{background:var(--bg3);padding:0 5px;border-radius:4px;font-size:10px;color:var(--text2)}
-.card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;margin-bottom:5px;font-size:12px}
-.card .ttl{font-weight:500;margin-bottom:3px}
-.card .meta{display:flex;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--text2)}
-.tag-crt{background:rgba(255,51,68,.15);color:var(--red);padding:1px 5px;border-radius:4px}
-.tag-hi{background:rgba(255,102,0,.15);color:var(--orange);padding:1px 5px;border-radius:4px}
-.tag-md{background:rgba(255,215,0,.1);color:var(--gold);padding:1px 5px;border-radius:4px}
-.emp{color:var(--text2)}
-
-/* AGENTS PAGE */
-.ag-sec{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
-.ag-hdr{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.ag-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;border:2px solid}
-.ag-nm{font-size:15px;font-weight:700}
-.ag-rl{font-size:11px;color:var(--text2)}
-.ag-path{font-size:10px;color:var(--text2);opacity:.5;font-family:monospace;margin-top:2px}
-.bu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:8px}
-.bu-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px}
-.bu-box .h{font-size:12px;font-weight:600;margin-bottom:2px}
-.bu-box .p{font-size:10px;color:var(--text2);font-family:monospace;margin-bottom:6px;opacity:.6}
-.bu-box .dept{background:var(--bg);padding:5px 8px;border-radius:4px;margin:3px 0;font-size:11px}
-.bu-box .dept .pth{font-size:9px;color:var(--text2);opacity:.4;font-family:monospace}
-.bu-box .emp{font-size:11px;padding:2px 0 2px 8px;border-left:2px solid var(--cyan);margin:2px 0}
-
-/* LOGS */
-.logs{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px}
-.log{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
-.log:last-child{border:0}
-.dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
-.dot.ok{background:var(--green)}
-.dot.idle{background:var(--text2)}
-.dot.err{background:var(--red)}
-.l-agent{font-weight:600;color:var(--cyan)}
-
-/* CHAT */
-.chat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;height:440px}
-.cmsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-.cmsg{max-width:80%;padding:8px 12px;border-radius:var(--radius);font-size:13px;line-height:1.4}
-.cmsg.bot{background:var(--bg3);align-self:flex-start;border:1px solid var(--border)}
-.cmsg.user{background:rgba(0,240,255,.08);align-self:flex-end;border:1px solid rgba(0,240,255,.15)}
-.cmsg .s{font-size:10px;color:var(--text2);margin-bottom:2px}
-.cinp{display:flex;gap:6px;padding:10px;border-top:1px solid var(--border)}
-.cinp input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text);outline:none;font-size:12px}
-.cinp input:focus{border-color:var(--cyan)}
-.cinp button{background:var(--cyan);color:var(--bg);border:none;border-radius:var(--radius-sm);padding:8px 14px;font-weight:600;cursor:pointer;font-size:12px}
-
-/* MODAL */
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
-.modal.open{display:flex}
-.modal-in{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;width:400px;max-width:90vw}
-.modal-in h2{font-size:16px;margin-bottom:14px}
-.modal-in label{font-size:11px;color:var(--text2);margin-bottom:3px;display:block}
-.modal-in input,.modal-in select,.modal-in textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text);font-size:12px;margin-bottom:10px;outline:none}
-.modal-in input:focus,.modal-in select:focus{border-color:var(--cyan)}
-.modal-in textarea{min-height:60px;resize:vertical}
-.modal-acts{display:flex;gap:6px;justify-content:flex-end;margin-top:6px}
-.modal-acts button{padding:7px 14px;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;font-size:12px;border:none}
-.btn-pr{background:var(--cyan);color:var(--bg)}
-.btn-sec{background:var(--bg3);color:var(--text)}
-
-.btn{all:unset;cursor:pointer;font-family:inherit}
-.btn-new{background:var(--cyan);color:var(--bg);padding:7px 14px;border-radius:var(--radius-sm);font-weight:600;font-size:12px;cursor:pointer}
-.btn-new:hover{opacity:.85}
-.btn-sm{padding:3px 8px;font-size:10px;border-radius:4px;cursor:pointer;border:none;font-family:inherit;font-weight:500;background:var(--bg);color:var(--text2);border:1px solid var(--border)}
-.btn-sm:hover{opacity:.8}
-
-@media(max-width:800px){
- .sidebar{width:50px;padding:10px 6px}
- .sidebar .logo{font-size:12px}
- .nav-item span:not(.icon){display:none}
- .board{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;line-height:1.5}
+.hdr{background:var(--navy);color:#fff;padding:0 24px;height:52px;display:flex;align-items:center;gap:32px;position:sticky;top:0;z-index:100}
+.hdr-logo{font-weight:700;font-size:15px;letter-spacing:0;display:flex;align-items:center;gap:8px}
+.hdr-logo span{color:var(--blue-l)}
+.hdr-logo small{font-weight:400;font-size:10px;color:#94a3b8;margin-left:4px;letter-spacing:.3px}
+.nav{display:flex;gap:4px;flex:1}
+.nav a{padding:6px 14px;border-radius:6px;color:#94a3b8;text-decoration:none;font-size:12px;font-weight:500;transition:all .15s;cursor:pointer}
+.nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.nav a.active{color:#fff;background:var(--blue);}
+.wrap{max-width:1360px;margin:0 auto;padding:20px 24px}
+.section{display:none}
+.section.active{display:block}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.stat .n{font-size:22px;font-weight:700;line-height:1.2}
+.stat .l{font-size:11px;color:var(--text2);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;font-weight:500}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+.card h3{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text)}
+/* Agents */
+.agent-row{display:flex;gap:24px;margin-bottom:20px;overflow-x:auto;padding-bottom:8px}
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;min-width:180px;flex:1;box-shadow:var(--shadow)}
+.agent-card .badge{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;margin-bottom:10px;border:2px solid}
+.agent-card .anm{font-weight:600;font-size:14px}
+.agent-card .arol{font-size:11px;color:var(--text2);margin:2px 0 6px}
+.agent-card .apath{font-size:10px;color:var(--text2);font-family:'SF Mono',Consolas,monospace;background:var(--bg);padding:4px 8px;border-radius:4px;display:inline-block}
+.bu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:16px}
+.bu-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.bu-card .hdr{display:flex;align-items:center;gap:8px;padding:0 0 10px 0;background:transparent;position:static}
+.bu-card .hdr .nm{font-weight:600;font-size:13px}
+.bu-card .hdr .path{font-size:10px;color:var(--text2);font-family:'SF Mono',Consolas,monospace}
+.bu-card .depts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.bu-card .dept{background:var(--bg);border-radius:6px;padding:8px 10px;flex:1;min-width:140px}
+.bu-card .dept .dnm{font-weight:500;font-size:12px}
+.bu-card .dept .dp{font-size:9px;color:var(--text2);font-family:'SF Mono',Consolas,monospace;margin:2px 0 4px}
+.bu-card .dept .emp{font-size:11px;color:var(--text);padding:2px 0}
+.bu-card .dept .emp-none{font-size:10px;color:var(--text2);font-style:italic}
+.tree-section{margin-bottom:24px}
+.tree-level{display:flex;justify-content:center;gap:16px;margin:6px 0;flex-wrap:wrap}
+.tree-node{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;min-width:120px;text-align:center;box-shadow:var(--shadow);transition:.15s}
+.tree-node:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);transform:translateY(-1px)}
+.tree-node .tnm{font-weight:600;font-size:12px}
+.tree-node .trl{font-size:10px;color:var(--text2)}
+.tree-node .tcnt{font-size:10px;color:var(--text2);margin-top:2px}
+.tree-ln{height:24px;border-left:2px dashed var(--border);margin:0 auto;width:2px}
+/* Tasks */
+.kanban{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.kanban .col{padding:0}
+.kanban .col-h{font-size:12px;font-weight:600;padding:8px 0;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.task{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;box-shadow:var(--shadow)}
+.task .ttl{font-weight:600;font-size:12px;margin-bottom:4px}
+.task .tdesc{font-size:11px;color:var(--text2);margin-bottom:4px}
+.task .tmeta{display:flex;gap:6px;font-size:10px;color:var(--text2)}
+.tag{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;text-transform:uppercase}
+.tag.critical{background:#fee2e2;color:#dc2626}
+.tag.high{background:#fed7aa;color:#ea580c}
+.tag.medium{background:#fef3c7;color:#d97706}
+.tag.low{background:#d1fae5;color:#059669}
+/* Logs */
+.log-list{max-height:300px;overflow-y:auto}
+.log{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.log:last-child{border:none}
+.log .dot{width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.dot.completed{background:var(--green)}
+.dot.in_progress{background:var(--blue)}
+.dot.pending{background:var(--text2)}
+.dot.critical{background:var(--pink)}
+/* Chat */
+.chat-box{max-height:400px;overflow-y:auto;margin-bottom:12px;padding:0}
+.chat-msg{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+.chat-msg .who{font-weight:600;font-size:11px}
+.chat-msg .txt{color:var(--text);margin:2px 0}
+.chat-msg .ts{font-size:10px;color:var(--text2)}
+.chat-input{display:flex;gap:8px}
+.chat-input input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;background:var(--surface)}
+.chat-input input:focus{border-color:var(--blue)}
+.chat-input button{padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);font-weight:500;cursor:pointer;font-size:12px}
+.chat-input button:hover{background:var(--blue-l)}
+/* Footer */
+.ftr{text-align:center;padding:16px;font-size:10px;color:var(--text2);border-top:1px solid var(--border);margin-top:32px}
+@media(max-width:768px){
+ .hdr{gap:12px;padding:0 12px}
+ .nav a{padding:4px 10px;font-size:11px}
+ .wrap{padding:12px}
+ .kanban{grid-template-columns:1fr}
+ .bu-grid{grid-template-columns:1fr}
 }
 </style>
-</head><body>
+</head>
+<body>
 
-<nav class="sidebar">
- <div class="logo">ADAM <span>OS</span></div>
- <div class="nav-item active" data-page="dash" onclick="go('dash')"><span class="icon">🏛️</span><span>Dashboard</span></div>
- <div class="nav-item" data-page="tasks" onclick="go('tasks')"><span class="icon">📋</span><span>Tareas</span></div>
- <div class="nav-item" data-page="agents" onclick="go('agents')"><span class="icon">🤖</span><span>Agentes</span></div>
- <div class="nav-item" data-page="activity" onclick="go('activity')"><span class="icon">📡</span><span>Actividad</span></div>
- <div class="nav-item" data-page="chat" onclick="go('chat')"><span class="icon">💬</span><span>Chat</span></div>
-</nav>
+<header class="hdr">
+ <div class="hdr-logo"><span>▲</span> ADAM OS <small>v0.0.1</small></div>
+ <nav class="nav">
+  <a class="active" onclick="go('dash')">Dashboard</a>
+  <a onclick="go('agents')">Agentes</a>
+  <a onclick="go('tasks')">Tareas</a>
+  <a onclick="go('logs')">Actividad</a>
+  <a onclick="go('chat')">Chat</a>
+ </nav>
+</header>
 
-<div class="main">
+<div class="wrap">
 
-<div class="page active" id="page-dash">
- <div class="page-header">
-  <div><h1>🏛️ Command Center</h1><div class="sub">ADAM OS System — estructura real de carpetas</div></div>
-  <button class="btn-new" onclick="go('tasks')">+ Tarea</button>
- </div>
+<!-- Stats -->
+<div class="section active" id="sec-dash">
  <div class="stats" id="statsRow"></div>
- <div class="tree-wrap"><div class="tree" id="hierTree"></div></div>
- <div style="margin-top:16px">
-  <h2 style="font-size:14px;margin-bottom:8px">📡 Última actividad</h2>
-  <div class="logs" id="miniLog"></div>
+ <div class="card">
+  <h3>🏛️ Jerarquía del Sistema</h3>
+  <div id="hierTree"></div>
  </div>
 </div>
 
-<div class="page" id="page-tasks">
- <div class="page-header">
-  <div><h1>📋 Tareas</h1><div class="sub">Los agentes reciben tareas de AXON y las delegan a empleados en sus departamentos</div></div>
-  <button class="btn-new" onclick="openModal()">+ Nueva</button>
- </div>
- <div class="board" id="taskBoard"></div>
-</div>
-
-<div class="page" id="page-agents">
- <div class="page-header">
-  <div><h1>🤖 Jerarquía de Agentes</h1><div class="sub">Cada departamento del dashboard corresponde a una carpeta real en adam-os-system/</div></div>
- </div>
+<!-- Agents -->
+<div class="section" id="sec-agents">
  <div id="agentsFull"></div>
 </div>
 
-<div class="page" id="page-activity">
- <div class="page-header">
-  <div><h1>📡 Actividad</h1><div class="sub">Registro de acciones en todo el sistema</div></div>
- </div>
- <div class="logs" id="fullLog"></div>
+<!-- Tasks -->
+<div class="section" id="sec-tasks">
+ <div class="kanban" id="taskBoard"></div>
 </div>
 
-<div class="page" id="page-chat">
- <div class="page-header">
-  <div><h1>💬 Chat</h1><div class="sub">Háblale a AXON</div></div>
+<!-- Logs -->
+<div class="section" id="sec-logs">
+ <div class="card">
+  <h3>📋 Actividad Reciente</h3>
+  <div class="log-list" id="miniLog"></div>
  </div>
- <div class="chat">
-  <div class="cmsgs" id="chatMsgs"></div>
-  <div class="cinp">
-   <input id="chatInp" placeholder="Escribe..." onkeydown="if(event.key==='Enter')sendChat()">
+ <div class="card">
+  <h3>📋 Historial Completo</h3>
+  <div class="log-list" id="fullLog"></div>
+ </div>
+</div>
+
+<!-- Chat -->
+<div class="section" id="sec-chat">
+ <div class="card">
+  <h3>💬 Command Center Chat</h3>
+  <div class="chat-box" id="chatBox"></div>
+  <div class="chat-input">
+   <input id="chatInput" placeholder="Escribe un comando o mensaje..." onkeydown="if(event.key==='Enter')sendChat()">
    <button onclick="sendChat()">Enviar</button>
   </div>
  </div>
 </div>
 
-<div class="modal" id="taskModal">
- <div class="modal-in">
-  <h2>📋 Nueva Tarea</h2>
-  <label>Título</label><input id="tTitle">
-  <label>Descripción</label><textarea id="tDesc"></textarea>
-  <label>Asignar a</label>
-  <select id="tAssign">
-   <option value="AXON">AXON (CEO)</option>
-   <option value="HERMES">HERMES (Brazo Derecho)</option>
-  </select>
-  <label>Prioridad</label>
-  <select id="tPri">
-   <option value="critical">Crítica</option>
-   <option value="high">Alta</option>
-   <option value="medium" selected>Media</option>
-  </select>
-  <div class="modal-acts">
-   <button class="btn-sec" onclick="closeModal()">Cancelar</button>
-   <button class="btn-pr" onclick="createTask()">Crear</button>
-  </div>
- </div>
 </div>
 
-<script>
-const S={hierarchy:[],tasks:[],logs:[],chatId:0,page:'dash'};
+<footer class="ftr">ADAM OS · Control Center v0.0.1 — Construyendo el imperio codo a codo</footer>
 
-async function load(){
+<script>
+const API='/api';
+let S={hierarchy:[],tasks:[],logs:[],chatId:0};
+const agentColors={AXON:'#06b6d4',HERMES:'#ec4899','Axon-Life':'#10b981','Axon-Work':'#f59e0b','Axon-Music':'#f97316'};
+const agentOrder=['AXON','HERMES','Axon-Life','Axon-Work','Axon-Music'];
+
+function go(s){document.querySelectorAll('.section,.nav a').forEach(e=>e.classList.remove('active'));document.getElementById('sec-'+s).classList.add('active');document.querySelectorAll('.nav a').forEach((a,i)=>{if((['dash','agents','tasks','logs','chat'])[i]===s)a.classList.add('active')})}
+
+async function loadAll(){
  const [h,t,l]=await Promise.all([
-  fetch('/api/hierarchy').then(r=>r.json()),
-  fetch('/api/tasks').then(r=>r.json()),
-  fetch('/api/agent-logs?limit=8').then(r=>r.json()),
+  fetch(API+'/hierarchy').then(r=>r.json()),
+  fetch(API+'/tasks').then(r=>r.json()),
+  fetch(API+'/logs').then(r=>r.json())
  ]);
- S.hierarchy=h; S.tasks=t; S.logs=l; renderAll();
+ S={...S,hierarchy:h,tasks:t,logs:l};
+ renderAll();
 }
 
-function renderAll(){renderStats();renderTree();renderBoard();renderAgents();renderMiniLog();renderFullLog();renderChat();}
-
-function go(p){
- document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
- document.querySelector(`[data-page="${p}"]`).classList.add('active');
- document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
- document.getElementById('page-'+p).classList.add('active');
- S.page=p;
- if(p==='activity')renderFullLog();
- if(p==='chat'){renderChat();setTimeout(()=>{let e=document.getElementById('chatMsgs');if(e)e.scrollTop=e.scrollHeight},100)}
+function renderAll(){
+ renderStats();renderTree();renderBoard();renderAgents();renderMiniLog();renderFullLog();renderChat();
 }
 
 // ===== STATS =====
 function renderStats(){
  const t=S.tasks;
- const buCount = S.hierarchy.reduce((s,a)=>s+(a.business_units||[]).length,0);
- const deptCount = S.hierarchy.reduce((s,a)=>s+(a.business_units||[]).reduce((su,bu)=>su+(bu.departments||[]).length,0),0);
+ const buCount=S.hierarchy.reduce((s,a)=>s+(a.business_units||[]).length,0);
+ const deptCount=S.hierarchy.reduce((s,a)=>s+(a.business_units||[]).reduce((su,bu)=>su+(bu.departments||[]).length,0),0);
  let emps=0;
  S.hierarchy.forEach(a=>(a.business_units||[]).forEach(bu=>(bu.departments||[]).forEach(d=>emps+=(d.employees||[]).length)));
  document.getElementById('statsRow').innerHTML=`
- <div class="stat"><div class="n" style="color:var(--cyan)">${t.filter(x=>x.status==='pending').length}</div><div class="l">📌 Pendientes</div></div>
- <div class="stat"><div class="n" style="color:var(--gold)">${t.filter(x=>x.status==='in_progress').length}</div><div class="l">⚡️ En curso</div></div>
- <div class="stat"><div class="n" style="color:var(--green)">${t.filter(x=>x.status==='completed').length}</div><div class="l">✅ Completadas</div></div>
- <div class="stat"><div class="n" style="color:var(--pink)">${S.hierarchy.length}</div><div class="l">🤖 Agentes</div></div>
- <div class="stat"><div class="n" style="color:var(--gold)">${buCount}</div><div class="l">🏢 Unidades</div></div>
- <div class="stat"><div class="n" style="color:var(--blue)">${deptCount}</div><div class="l">📂 Departamentos</div></div>
- <div class="stat"><div class="n" style="color:var(--green)">${emps}</div><div class="l">👥 Empleados</div></div>
+ <div class="stat"><div class="n" style="color:var(--blue)">${S.hierarchy.length}</div><div class="l">Agentes</div></div>
+ <div class="stat"><div class="n" style="color:var(--gold)">${buCount}</div><div class="l">Unidades de Negocio</div></div>
+ <div class="stat"><div class="n" style="color:var(--green)">${deptCount}</div><div class="l">Departamentos</div></div>
+ <div class="stat"><div class="n" style="color:var(--cyan)">${emps}</div><div class="l">Empleados</div></div>
+ <div class="stat"><div class="n" style="color:var(--pink)">${t.length}</div><div class="l">Tareas</div></div>
+ <div class="stat"><div class="n" style="color:var(--orange)">${t.filter(x=>x.status==='in_progress').length}</div><div class="l">En Curso</div></div>
 `;
 }
 
 // ===== TREE =====
 function renderTree(){
- const agents = S.hierarchy;
- let html='<div class="tree-row">';
+ const agents=S.hierarchy;
+ let html='';
+ // Row 1: AXON
+ html+='<div class="tree-level">';
  agents.filter(a=>a.name==='AXON').forEach(a=>html+=nodeHtml(a));
- html+='</div><div class="tree-ln"></div><div class="tree-row">';
+ html+='</div><div class="tree-ln"></div>';
+ // Row 2: HERMES
+ html+='<div class="tree-level">';
  agents.filter(a=>a.name==='HERMES').forEach(a=>html+=nodeHtml(a));
  html+='</div><div class="tree-ln"></div>';
- // 3 sub-agents: Axon-Life, Axon-Work, Axon-Music
- const subs = ['Axon-Life','Axon-Work','Axon-Music'];
- html+='<div class="tree-row">';
- subs.forEach(sn=>{
-  const a = agents.find(x=>x.name===sn);
-  if(a) html+=nodeHtml(a);
- });
- html+='</div><div class="tree-ln"></div>';
- // Business units grouped by sub-agent
- let buRow='<div class="tree-bu">';
- agents.filter(a=>subs.includes(a.name)).forEach(a=>{
+ // Row 3: 3 sub-agents
+ html+='<div class="tree-level">';
+ ['Axon-Life','Axon-Work','Axon-Music'].forEach(sn=>{const a=agents.find(x=>x.name===sn);if(a) html+=nodeHtml(a)});
+ html+='</div>';
+ // Business units
+ html+='<div class="tree-level" style="margin-top:12px;gap:20px">';
+ agents.filter(a=>['Axon-Life','Axon-Work','Axon-Music'].includes(a.name)).forEach(a=>{
   (a.business_units||[]).forEach(bu=>{
-   const depts = (bu.departments||[]).map(d=>`<span class="dept-tag">📂 ${d.dir_name}</span>`).join('');
-   const empCount = (bu.departments||[]).reduce((s,d)=>s+(d.employees||[]).length,0);
-   buRow+=`<div class="bu-card"><div class="bu-nm" style="color:${bu.color||'var(--gold)'}">${bu.short_name}</div>
-    <div class="bu-path">📁 ${bu.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>
-    <div>${depts}</div>
-    <div class="emp">👥 ${empCount} empleados</div></div>`;
+   const depts=(bu.departments||[]).map(d=>`<span style="font-size:10px;background:var(--bg);padding:2px 8px;border-radius:3px;color:var(--text2)">📂 ${d.dir_name}</span>`).join(' ');
+   const empCount=(bu.departments||[]).reduce((s,d)=>s+(d.employees||[]).length,0);
+   html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;min-width:180px;box-shadow:var(--shadow)">
+    <div style="font-weight:600;font-size:12px;color:${bu.color||'var(--gold)'}">${bu.short_name}</div>
+    <div style="font-size:9px;color:var(--text2);font-family:monospace">📁 ${bu.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>
+    <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${depts}</div>
+    <div style="font-size:10px;color:var(--text2);margin-top:6px">👥 ${empCount} empleados</div>
+   </div>`;
   });
  });
- buRow+='</div>';
- html+=buRow;
+ html+='</div>';
  document.getElementById('hierTree').innerHTML=html;
 }
 
 function nodeHtml(a){
- const colors={'AXON':'var(--cyan)','HERMES':'var(--pink)','Axon-Life':'var(--green)','Axon-Work':'var(--gold)','Axon-Music':'var(--orange)'};
- const c=colors[a.name]||'var(--cyan)';
- const bu = a.business_units||[];
- const tdepts = bu.reduce((s,bu)=>s+(bu.departments||[]).length,0);
- const temps = bu.reduce((s,bu)=>s+bu.departments.reduce((sd,d)=>sd+(d.employees||[]).length,0),0);
- return `<div class="node" style="border-color:${c}" onclick="go('agents')">
-  <div class="nm" style="color:${c}">${a.name}</div>
-  <div class="rl">${(a.role||'').split('/')[0].trim()}</div>
-  <div class="cnt">${bu.length} unidad · ${tdepts} dept · ${temps} emp</div>
-  <div class="path">${a.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>
+ const c=agentColors[a.name]||'var(--blue)';
+ const bu=a.business_units||[];
+ const tdepts=bu.reduce((s,bu)=>s+(bu.departments||[]).length,0);
+ const temps=bu.reduce((s,bu)=>s+bu.departments.reduce((sd,d)=>sd+(d.employees||[]).length,0),0);
+ return `<div class="tree-node" onclick="go('agents')" style="cursor:pointer">
+  <div class="tnm" style="color:${c}">${a.name}</div>
+  <div class="trl">${(a.role||'').split('/')[0].trim()}</div>
+  <div class="tcnt">${bu.length} unidad · ${tdepts} dept · ${temps} emp</div>
  </div>`;
 }
 
-// ===== TASK BOARD =====
-function renderBoard(){
- const cols=[
-  {k:'pending',l:'📌 Por Hacer'},{k:'in_progress',l:'⚡️ En Proceso'},
-  {k:'realizado',l:'💪🏻 Realizado'},{k:'review',l:'🔍 Revisión'},{k:'completed',l:'✅ Completado'}
- ];
- let html='';
- cols.forEach(c=>{
-  const tasks=S.tasks.filter(t=>t.status===c.k);
-  html+=`<div class="col"><div class="col-hdr">${c.l}<span class="cnt">${tasks.length}</span></div>
-   ${tasks.length?tasks.map(t=>cardHtml(t)).join(''):'<div style="text-align:center;padding:20px 0;color:var(--text2);font-size:12px">—</div>'}</div>`;
- });
- document.getElementById('taskBoard').innerHTML=html;
-}
-
-function cardHtml(t){
- const p={critical:'tag-crt Crítica',high:'tag-hi Alta',medium:'tag-md Media',low:'tag-md Baja'}[t.priority]||'tag-md Media';
- const [pclass,plabel]=p.split(' ');
- const acts=[];
- if(t.status==='pending')acts.push({s:'in_progress',l:'▶'});
- if(t.status==='in_progress')acts.push({s:'realizado',l:'💪'});
- if(t.status==='realizado')acts.push({s:'review',l:'🔍'});
- if(t.status==='review')acts.push({s:'completed',l:'✅'});
- if(t.status==='completed')acts.push({s:'pending',l:'↩'});
- return `<div class="card"><div class="ttl">${t.title}</div><div class="meta">
-  <span class="${pclass}">${plabel}</span><span>👤 ${t.assigned_to}</span>
-  ${t.department_path?`<span>📂 ${t.department_path.replace('/home/adamcloud/adam-os-system/2-teams/','')}</span>`:''}
- </div><div style="margin-top:4px;display:flex;gap:3px">
-  ${acts.map(a=>`<button class="btn-sm" onclick="mv(${t.id},'${a.s}')">${a.l}</button>`).join('')}
-  ${t.status==='pending'?`<button class="btn-sm" style="color:var(--red)" onclick="del(${t.id})">🗑</button>`:''}
- </div></div>`;
-}
-
-async function mv(id,s){
- await fetch(`/api/tasks/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:s})});
- S.tasks=await fetch('/api/tasks').then(r=>r.json());
- renderBoard();renderStats();
-}
-
-async function del(id){
- if(!confirm('¿Eliminar?'))return;
- await fetch(`/api/tasks/${id}`,{method:'DELETE'});
- S.tasks=S.tasks.filter(t=>t.id!==id);
- renderBoard();renderStats();
-}
-
-// ===== AGENTS FULL =====
+// ===== AGENTS =====
 function renderAgents(){
- const agents = S.hierarchy;
+ const agents=S.hierarchy;
  let html='';
- // All agents: AXON, HERMES, and sub-agents
- const order = ['AXON','HERMES','Axon-Life','Axon-Work','Axon-Music'];
- order.forEach(on=>{
-  const a = agents.find(x=>x.name===on);
-  if(!a) return;
-  html+=agSec(a);
+ agentOrder.forEach(on=>{
+  const a=agents.find(x=>x.name===on);
+  if(!a)return;
+  const c=agentColors[a.name]||'var(--blue)';
+  html+=`<div class="card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+   <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;border:2px solid ${c};color:${c}">${a.name[0]}</div>
+   <div><div style="font-weight:600;font-size:15px;color:${c}">${a.name}</div>
+   <div style="font-size:11px;color:var(--text2)">${a.role}</div>
+   <div style="font-size:10px;color:var(--text2);font-family:monospace">📁 ${a.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div></div>
+  </div>`;
   for(const bu of (a.business_units||[])){
-   const depts = (bu.departments||[]).map(d=>{
-    const emps=(d.employees||[]).map(e=>`<div class="emp">👤 ${e.name} — <span style="color:var(--text2)">${e.role}</span></div>`).join('');
-    return `<div class="dept">
-     <div style="font-weight:600;font-size:12px">📂 ${d.dir_name}/</div>
-     <div class="pth">${d.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>
-     ${emps||'<div style="font-size:10px;color:var(--text2);padding:2px 0">Sin empleados</div>'}
+   const depts=(bu.departments||[]).map(d=>{
+    const emps=(d.employees||[]).map(e=>`<div class="emp" style="font-size:12px;padding:1px 0">👤 ${e.name} — <span style="color:var(--text2)">${e.role}</span></div>`).join('');
+    return `<div class="dept"><div class="dnm">📂 ${d.dir_name}/</div>
+     <div class="dp">${d.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>
+     ${emps||'<div class="emp-none">Sin empleados</div>'}
     </div>`;
    }).join('');
-   html+=`<div class="bu-box"><div class="h" style="color:${bu.color||'var(--gold)'}">${bu.name}</div>
-    <div class="p">📁 ${bu.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>${depts}</div>`;
+   html+=`<div style="background:var(--bg);border-radius:var(--radius);padding:12px;margin-bottom:10px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+     <span style="font-weight:600;font-size:13px;color:${bu.color||'var(--gold)'}">${bu.name}</span>
+     <span style="font-size:10px;color:var(--text2);font-family:monospace">${bu.dir_path.replace('/home/adamcloud/adam-os-system/','')}</span>
+    </div>
+    <div class="depts">${depts}</div>
+   </div>`;
   }
+  html+='</div>';
  });
  document.getElementById('agentsFull').innerHTML=html;
 }
 
-function agSec(a){
- const colors={'AXON':'var(--cyan)','HERMES':'var(--pink)','Axon-Life':'var(--green)','Axon-Work':'var(--gold)','Axon-Music':'var(--orange)'};
- const c=colors[a.name]||'var(--cyan)';
- return `<div class="ag-sec"><div class="ag-hdr">
-  <div class="ag-av" style="border-color:${c};color:${c}">${a.name[0]}</div>
-  <div><div class="ag-nm" style="color:${c}">${a.name}</div><div class="ag-rl">${a.role}</div>
-  <div class="ag-path">📁 ${a.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div></div>
- </div></div>`;
+// ===== TASKS =====
+function renderBoard(){
+ const cols={pending:'📌 Pendientes',in_progress:'⚡ En Curso',completed:'✅ Completadas'};
+ let html='';
+ Object.entries(cols).forEach(([status,label])=>{
+  const items=S.tasks.filter(t=>t.status===status);
+  html+=`<div class="col"><div class="col-h">${label} (${items.length})</div>`;
+  items.forEach(t=>html+=`<div class="task"><div class="ttl">${t.title}</div>
+   <div class="tdesc">${t.description||''}</div>
+   <div class="tmeta"><span class="tag ${t.priority||'medium'}">${(t.priority||'medium').toUpperCase()}</span>
+   <span>${t.agent_name||''}</span></div></div>`);
+  html+='</div>';
+ });
+ document.getElementById('taskBoard').innerHTML=html;
 }
 
 // ===== LOGS =====
@@ -394,77 +315,40 @@ function renderMiniLog(){
  document.getElementById('miniLog').innerHTML=S.logs.slice(0,5).map(l=>logHtml(l)).join('');
 }
 function renderFullLog(){
- document.getElementById('fullLog').innerHTML=S.logs.length?S.logs.map(l=>logHtml(l)).join(''):'<div style="text-align:center;padding:30px;color:var(--text2);font-size:13px">Sin actividad</div>';
+ document.getElementById('fullLog').innerHTML=S.logs.length?S.logs.map(l=>logHtml(l)).join(''):'<div style="text-align:center;padding:20px;color:var(--text2)">Sin actividad</div>';
 }
 function logHtml(l){
  return `<div class="log"><div class="dot ${l.status}"></div><div>
-  <span class="l-agent">${l.agent_name}</span> <span style="color:var(--text2)">${l.action}</span>
+  <span style="font-weight:600">${l.agent_name}</span> <span style="color:var(--text2)">${l.action}</span>
   ${l.target?`→ <span style="color:var(--gold)">${l.target}</span>`:''}
   <div style="font-size:10px;color:var(--text2)">${l.details||l.timestamp||''}</div></div></div>`;
 }
 
 // ===== CHAT =====
 async function renderChat(){
- const msgs=await fetch(`/api/chat?since_id=${S.chatId}`).then(r=>r.json());
- if(!msgs.length)return;
- S.chatId=Math.max(...msgs.map(m=>m.id));
- const el=document.getElementById('chatMsgs');
+ const msgs=await fetch(API+'/chat?since_id='+S.chatId).then(r=>r.json());
+ if(!msgs.length) return;
+ S.chatId=msgs[msgs.length-1].id;
+ const box=document.getElementById('chatBox');
  msgs.forEach(m=>{
-  const u=m.sender!=='AXON';
-  el.innerHTML+=`<div class="cmsg ${u?'user':'bot'}"><div class="s">${m.sender}</div>${m.message}</div>`;
+  box.innerHTML+=`<div class="chat-msg"><div class="who">${m.agent_name||m.sender||'User'}</div><div class="txt">${m.message||m.text}</div><div class="ts">${m.timestamp||''}</div></div>`;
  });
- el.scrollTop=el.scrollHeight;
+ box.scrollTop=box.scrollHeight;
 }
 async function sendChat(){
- const inp=document.getElementById('chatInp');
- const msg=inp.value.trim();
- if(!msg)return;
+ const inp=document.getElementById('chatInput');
+ const text=inp.value.trim();
+ if(!text) return;
  inp.value='';
- await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
- const res=genRes(msg);
- setTimeout(async()=>{
-  await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender:'AXON',message:res})});
-  renderChat();
- },400);
+ await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender:'User',text})});
  renderChat();
 }
-function genRes(m){
- const l=m.toLowerCase();
- if(l.includes('tarea')) return '✅ Recibido. Crealá desde el botón + Nueva en la pestaña Tareas. ¿A qué departamento va?';
- if(l.includes('hola')||l.includes('buenos')) return '¡Bienvenido, Natch! 🚀 El Command Center ahora refleja las carpetas reales: adam-grafica/ (8 dept) y midisoft/ (10 dept). ¿Qué tal se ve?';
- if(l.includes('quién')||l.includes('quien')||l.includes('jerarquía')) return 'Tenemos a AXON (CEO) → HERMES → ADAM GRÁFICA + MIDI SOFT con 18 departamentos totales. Cada uno con su carpeta real en 2-teams/.';
- return 'Entendido. El sistema está monitoreando. ¿Necesitas algo específico?';
-}
 
-// ===== MODAL =====
-function openModal(){document.getElementById('taskModal').classList.add('open')}
-function closeModal(){document.getElementById('taskModal').classList.remove('open')}
-async function createTask(){
- const title=document.getElementById('tTitle').value.trim();
- if(!title)return;
- await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-  title,description:document.getElementById('tDesc').value.trim(),
-  assigned_to:document.getElementById('tAssign').value,
-  priority:document.getElementById('tPri').value,
- })});
- closeModal();
- S.tasks=await fetch('/api/tasks').then(r=>r.json());
- renderBoard();renderStats();
-}
-
-// ===== POLLING =====
-setInterval(async()=>{
- const [t,l]=await Promise.all([
-  fetch('/api/tasks').then(r=>r.json()),
-  fetch('/api/agent-logs?limit=8').then(r=>r.json()),
- ]);
- const changed=JSON.stringify(t)!==JSON.stringify(S.tasks);
- S.tasks=t;S.logs=l;
- if(changed){renderBoard();renderStats();}
- renderMiniLog();
-},5000);
-setInterval(()=>renderChat(),8000);
-
-load();
+// ===== INIT =====
+loadAll();
+setInterval(loadAll,15000);
+setInterval(renderChat,5000);
 </script>
-</body></html>
+
+</body>
+</html>

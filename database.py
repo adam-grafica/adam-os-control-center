@@ -212,10 +212,12 @@ def _seed_all(c):
         # MIDI SOFT → engineering
         ("CODE ARCHITECT",    "Arquitecto de Código",          21),
         ("MIDI Developer",    "Desarrollo MIDI + IA",          21),
-        ("Composer AI",       "Composición Musical IA",        21),
-        ("Sound Engineer",    "Ingeniero de Sonido",           21),
         # MIDI SOFT → devops-infra-security
         ("HERALD",            "Monitor de Infraestructura",    24),
+        
+        # Axon-Music → produccion
+        ("Composer AI",       "Composición Musical IA",        42),
+        ("Sound Engineer",    "Ingeniero de Sonido",           42),
         # MIDI SOFT → product
         # MIDI SOFT → ux-ui-research
         # MIDI SOFT → qa-quality
