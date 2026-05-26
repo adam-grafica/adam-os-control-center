@@ -113,6 +113,9 @@ def _seed_all(c):
     agents = [
         (1, "AXON",   "Agente Supremo / CEO",             0, None, "/home/adamcloud/adam-os-system/1-root-axon", "#00f0ff"),
         (2, "HERMES", "Brazo Derecho Articulado",          1, 1,    "/home/adamcloud/adam-os-system/2-teams",      "#ff00e5"),
+        (3, "Axon-Life", "Desarrollo Personal y Bienestar",2, 2,    "/home/adamcloud/adam-os-system/3-life",       "#00ff88"),
+        (4, "Axon-Work",  "Negocios y Emprendimientos",    2, 2,    "/home/adamcloud/adam-os-system/2-teams",      "#ffd700"),
+        (5, "Axon-Music", "Artista Musical Independiente",  2, 2,    "/home/adamcloud/adam-os-system/5-music",      "#ff8800"),
     ]
     for id_, name, role, level, parent, dpath, color in agents:
         c.execute("INSERT OR REPLACE INTO agents (id,name,role,level,parent_id,dir_path,color) VALUES (?,?,?,?,?,?,?)",
@@ -123,10 +126,18 @@ def _seed_all(c):
     # MIDI SOFT = carpeta midisoft/
     units = [
         # Business units
-        (1,  "ADAM GRÁFICA", "ADAM G.", "adam-grafica", "adam-grafica", 2, None,
+        (1,  "ADAM GRÁFICA", "ADAM G.", "adam-grafica", "adam-grafica", 4, None,
          "Agencia boutique de branding, diseño, marketing y desarrollo", "#ffd700"),
-        (2,  "MIDI SOFT",    "MIDI S.",  "midisoft",      "midisoft",     2, None,
+        (2,  "MIDI SOFT",    "MIDI S.",  "midisoft",      "midisoft",     4, None,
          "Laboratorio de software, producto e infraestructura",       "#4488ff"),
+        
+        # Axon-Life (agent_id=3, parent_id=None)
+        (3,  "AXON LIFE",     "A.LIFE",   "3-life",        "3-life",       3, None,
+         "Desarrollo personal, fitness, hábitos y bienestar",           "#00ff88"),
+        
+        # Axon-Music (agent_id=5, parent_id=None)
+        (4,  "AXON MUSIC",    "MUSIC",    "5-music",       "5-music",      5, None,
+         "Carrera musical independiente, distribución y contenido",     "#ff8800"),
         
         # ADAM GRÁFICA → Departamentos (parent_id=1)
         (10, "direction-ops-delivery",   "Delivery",   "direction-ops-delivery",   "adam-grafica", 2, 1, "", "#ff9944"),
@@ -149,9 +160,36 @@ def _seed_all(c):
         (27, "stakeholder-success",     "Stakeholder", "stakeholder-success",    "midisoft", 2, 2, "", "#88cc66"),
         (28, "business-revenue-partnerships", "Revenue","business-revenue-partnerships","midisoft",2,2,"","#ffaa44"),
         (29, "people-ops-finance",      "People",     "people-ops-finance",      "midisoft", 2, 2, "", "#cc88aa"),
+        
+        # Axon-Life → Departamentos (parent_id=3)
+        (30, "entrenamiento",    "Training",   "entrenamiento",  "3-life",  3, 3, "", "#00ff88"),
+        (31, "habitos",          "Habits",     "habitos",        "3-life",  3, 3, "", "#44ffaa"),
+        (32, "ejercicios",       "Exercise",   "ejercicios",     "3-life",  3, 3, "", "#88ffcc"),
+        (33, "estiramientos",    "Stretch",    "estiramientos",  "3-life",  3, 3, "", "#aaffdd"),
+        
+        # Axon-Music → Departamentos (parent_id=4)
+        (40, "distribucion",     "Distribution","distribucion",  "5-music", 4, 4, "", "#ff8800"),
+        (41, "branding-musical", "Branding",   "branding-musical","5-music",4, 4, "", "#ffaa44"),
+        (42, "produccion",       "Production", "produccion",     "5-music", 4, 4, "", "#ffcc66"),
+        (43, "contenido",        "Content",    "contenido",      "5-music", 4, 4, "", "#ffdd88"),
     ]
     for id_, name, short, dname, dpath, agent_id, parent, desc, color in units:
-        full_path = f"/home/adamcloud/adam-os-system/2-teams/{dpath}"
+        if parent is None:
+            # Top-level business unit = the folder itself
+            if dpath.startswith("3-life"):
+                full_path = "/home/adamcloud/adam-os-system/3-life"
+            elif dpath.startswith("5-music"):
+                full_path = "/home/adamcloud/adam-os-system/5-music"
+            else:
+                full_path = f"/home/adamcloud/adam-os-system/2-teams/{dpath}"
+        else:
+            # Department = subfolder within its business unit
+            if dpath.startswith("3-life"):
+                full_path = f"/home/adamcloud/adam-os-system/3-life/{dname}"
+            elif dpath.startswith("5-music"):
+                full_path = f"/home/adamcloud/adam-os-system/5-music/{dname}"
+            else:
+                full_path = f"/home/adamcloud/adam-os-system/2-teams/{dpath}/{dname}"
         c.execute(
             "INSERT OR REPLACE INTO business_units (id,name,short_name,dir_name,dir_path,agent_id,parent_id,description,color) VALUES (?,?,?,?,?,?,?,?,?)",
             (id_, name, short, dname, full_path, agent_id, parent, desc, color)

@@ -245,18 +245,19 @@ function go(p){
 // ===== STATS =====
 function renderStats(){
  const t=S.tasks;
+ const buCount = S.hierarchy.reduce((s,a)=>s+(a.business_units||[]).length,0);
+ const deptCount = S.hierarchy.reduce((s,a)=>s+(a.business_units||[]).reduce((su,bu)=>su+(bu.departments||[]).length,0),0);
  let emps=0;
  S.hierarchy.forEach(a=>(a.business_units||[]).forEach(bu=>(bu.departments||[]).forEach(d=>emps+=(d.employees||[]).length)));
- const depts = S.hierarchy.reduce((s,a)=>s+(a.business_units||[]).reduce((su,bu)=>su+(bu.departments||[]).length,0),0);
  document.getElementById('statsRow').innerHTML=`
-  <div class="stat"><div class="n" style="color:var(--cyan)">${t.filter(x=>x.status==='pending').length}</div><div class="l">📌 Pendientes</div></div>
-  <div class="stat"><div class="n" style="color:var(--gold)">${t.filter(x=>x.status==='in_progress').length}</div><div class="l">⚡️ En curso</div></div>
-  <div class="stat"><div class="n" style="color:var(--green)">${t.filter(x=>x.status==='completed').length}</div><div class="l">✅ Completadas</div></div>
-  <div class="stat"><div class="n" style="color:var(--pink)">${S.hierarchy.length}</div><div class="l">🤖 Agentes</div></div>
-  <div class="stat"><div class="n" style="color:var(--gold)">2</div><div class="l">🏢 Unidades</div></div>
-  <div class="stat"><div class="n" style="color:var(--blue)">${depts}</div><div class="l">📂 Departamentos</div></div>
-  <div class="stat"><div class="n" style="color:var(--green)">${emps}</div><div class="l">👥 Empleados</div></div>
- `;
+ <div class="stat"><div class="n" style="color:var(--cyan)">${t.filter(x=>x.status==='pending').length}</div><div class="l">📌 Pendientes</div></div>
+ <div class="stat"><div class="n" style="color:var(--gold)">${t.filter(x=>x.status==='in_progress').length}</div><div class="l">⚡️ En curso</div></div>
+ <div class="stat"><div class="n" style="color:var(--green)">${t.filter(x=>x.status==='completed').length}</div><div class="l">✅ Completadas</div></div>
+ <div class="stat"><div class="n" style="color:var(--pink)">${S.hierarchy.length}</div><div class="l">🤖 Agentes</div></div>
+ <div class="stat"><div class="n" style="color:var(--gold)">${buCount}</div><div class="l">🏢 Unidades</div></div>
+ <div class="stat"><div class="n" style="color:var(--blue)">${deptCount}</div><div class="l">📂 Departamentos</div></div>
+ <div class="stat"><div class="n" style="color:var(--green)">${emps}</div><div class="l">👥 Empleados</div></div>
+`;
 }
 
 // ===== TREE =====
@@ -266,33 +267,42 @@ function renderTree(){
  agents.filter(a=>a.name==='AXON').forEach(a=>html+=nodeHtml(a));
  html+='</div><div class="tree-ln"></div><div class="tree-row">';
  agents.filter(a=>a.name==='HERMES').forEach(a=>html+=nodeHtml(a));
- html+='</div><div class="tree-ln"></div><div class="tree-row">';
- // Business units under HERMES
- const hermes = agents.find(a=>a.name==='HERMES');
- if(hermes){
-  hermes.business_units.forEach(bu=>{
+ html+='</div><div class="tree-ln"></div>';
+ // 3 sub-agents: Axon-Life, Axon-Work, Axon-Music
+ const subs = ['Axon-Life','Axon-Work','Axon-Music'];
+ html+='<div class="tree-row">';
+ subs.forEach(sn=>{
+  const a = agents.find(x=>x.name===sn);
+  if(a) html+=nodeHtml(a);
+ });
+ html+='</div><div class="tree-ln"></div>';
+ // Business units grouped by sub-agent
+ let buRow='<div class="tree-bu">';
+ agents.filter(a=>subs.includes(a.name)).forEach(a=>{
+  (a.business_units||[]).forEach(bu=>{
    const depts = (bu.departments||[]).map(d=>`<span class="dept-tag">📂 ${d.dir_name}</span>`).join('');
    const empCount = (bu.departments||[]).reduce((s,d)=>s+(d.employees||[]).length,0);
-   html+=`<div class="bu-card"><div class="bu-nm" style="color:${bu.color||'var(--gold)'}">${bu.short_name}</div>
-    <div class="bu-path">📁 2-teams/${bu.dir_name}/</div>
+   buRow+=`<div class="bu-card"><div class="bu-nm" style="color:${bu.color||'var(--gold)'}">${bu.short_name}</div>
+    <div class="bu-path">📁 ${bu.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>
     <div>${depts}</div>
     <div class="emp">👥 ${empCount} empleados</div></div>`;
   });
- }
- html+='</div>';
+ });
+ buRow+='</div>';
+ html+=buRow;
  document.getElementById('hierTree').innerHTML=html;
 }
 
 function nodeHtml(a){
- const colors={AXON:'var(--cyan)',HERMES:'var(--pink)'};
+ const colors={'AXON':'var(--cyan)','HERMES':'var(--pink)','Axon-Life':'var(--green)','Axon-Work':'var(--gold)','Axon-Music':'var(--orange)'};
  const c=colors[a.name]||'var(--cyan)';
  const bu = a.business_units||[];
  const tdepts = bu.reduce((s,bu)=>s+(bu.departments||[]).length,0);
  const temps = bu.reduce((s,bu)=>s+bu.departments.reduce((sd,d)=>sd+(d.employees||[]).length,0),0);
  return `<div class="node" style="border-color:${c}" onclick="go('agents')">
   <div class="nm" style="color:${c}">${a.name}</div>
-  <div class="rl">${a.role.split(':')[0].substring(0,28)}</div>
-  <div class="cnt">${tdepts} dept · ${temps} emp</div>
+  <div class="rl">${(a.role||'').split('/')[0].trim()}</div>
+  <div class="cnt">${bu.length} unidad · ${tdepts} dept · ${temps} emp</div>
   <div class="path">${a.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>
  </div>`;
 }
@@ -347,10 +357,12 @@ async function del(id){
 function renderAgents(){
  const agents = S.hierarchy;
  let html='';
- agents.filter(a=>a.name==='AXON').forEach(a=>html+=agSec(a));
- agents.filter(a=>a.name==='HERMES').forEach(a=>{
+ // All agents: AXON, HERMES, and sub-agents
+ const order = ['AXON','HERMES','Axon-Life','Axon-Work','Axon-Music'];
+ order.forEach(on=>{
+  const a = agents.find(x=>x.name===on);
+  if(!a) return;
   html+=agSec(a);
-  // Business units
   for(const bu of (a.business_units||[])){
    const depts = (bu.departments||[]).map(d=>{
     const emps=(d.employees||[]).map(e=>`<div class="emp">👤 ${e.name} — <span style="color:var(--text2)">${e.role}</span></div>`).join('');
@@ -368,7 +380,8 @@ function renderAgents(){
 }
 
 function agSec(a){
- const c={AXON:'var(--cyan)',HERMES:'var(--pink)'}[a.name]||'var(--cyan)';
+ const colors={'AXON':'var(--cyan)','HERMES':'var(--pink)','Axon-Life':'var(--green)','Axon-Work':'var(--gold)','Axon-Music':'var(--orange)'};
+ const c=colors[a.name]||'var(--cyan)';
  return `<div class="ag-sec"><div class="ag-hdr">
   <div class="ag-av" style="border-color:${c};color:${c}">${a.name[0]}</div>
   <div><div class="ag-nm" style="color:${c}">${a.name}</div><div class="ag-rl">${a.role}</div>
