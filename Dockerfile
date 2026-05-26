@@ -2,6 +2,10 @@
 # Multi-stage: Python 3.11 slim
 FROM python:3.11-slim AS builder
 
+# Force build timestamp
+ARG BUILD_TIME
+RUN echo "Build: ${BUILD_TIME:-unknown}" > /tmp/build.info
+
 WORKDIR /app
 
 # Install dependencies
@@ -19,6 +23,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY . .
+
+# Include the full adam-os-system directory tree
+COPY ./adam-os-system /app/adam-os-system
 
 # Create static directory
 RUN mkdir -p /app/static

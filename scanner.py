@@ -7,7 +7,10 @@ import os
 import re
 from datetime import datetime
 
-BASE = "/home/adamcloud/adam-os-system"
+# Adaptive base path: in Docker /app/adam-os-system, locally the real path
+_DOCKER_PATH = "/app/adam-os-system"
+_LOCAL_PATH = os.environ.get("ADAM_OS_SYSTEM", "/home/adamcloud/adam-os-system")
+BASE = _DOCKER_PATH if os.path.exists(_DOCKER_PATH) else _LOCAL_PATH
 
 # Agents known by their top-level directory names
 KNOWN_AGENTS = {
@@ -20,7 +23,7 @@ KNOWN_AGENTS = {
 # Sub-agents mapped by their business unit folders
 SUB_AGENTS = {
     "Axon-Life": {
-        "dir": f"{BASE}/3-life",
+        "dir": os.path.join(BASE, "3-life"),
         "color": "#10b981",
         "units": [
             {"name": "AXON LIFE", "dir_name": "3-life", "color": "#10b981",
@@ -28,7 +31,7 @@ SUB_AGENTS = {
         ]
     },
     "Axon-Work": {
-        "dir": f"{BASE}/2-teams",
+        "dir": os.path.join(BASE, "2-teams"),
         "color": "#f59e0b",
         "units": [
             {"name": "ADAM GRÁFICA", "dir_name": "adam-grafica", "color": "#f59e0b",
@@ -46,7 +49,7 @@ SUB_AGENTS = {
         ]
     },
     "Axon-Music": {
-        "dir": f"{BASE}/5-music",
+        "dir": os.path.join(BASE, "5-music"),
         "color": "#f97316",
         "units": [
             {"name": "AXON MUSIC", "dir_name": "5-music", "color": "#f97316",
