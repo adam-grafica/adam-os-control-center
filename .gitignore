@@ -1,8 +1,7 @@
 __pycache__/
 *.pyc
-.env
-*.egg-info/
-dist/
-build/
-.venv/
+data/
 venv/
+.DS_Store
+adam-os-system/
+!adam-os-system/.gitignore
