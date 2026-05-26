@@ -60,7 +60,7 @@ NOTION_TASKS_DB = "1ba5f8c7-cf88-80f1-9547-000bde777ec3"
 NOTION_PROJECTS_PAGE = "1b85f8c7-cf88-804c-8a6b-cfa82e81e110"
 NOTION_CLIENTS_PAGE = "1b85f8c7-cf88-8014-af33-ea3e9fa54823"
 
-app = FastAPI(title="ADAM OS Command Center", version="2.0.0")
+app = FastAPI(title="ADAM OS Command Center", version="2.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -146,7 +146,7 @@ async def health():
     return {
         "status": "online",
         "hermes": "online",
-        "version": "2.0.0",
+        "version": "2.1.0",
         "uptime_seconds": int(time.time() - START_TIME),
         "timestamp": datetime.utcnow().isoformat(),
     }
