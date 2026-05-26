@@ -2,7 +2,7 @@
 <html lang="es"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ADAM OS v3</title>
+<title>ADAM OS v3.1</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -19,646 +19,439 @@ body{background:var(--bg);color:var(--text);min-height:100vh;display:flex}
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-
-/* SIDEBAR */
-.sidebar{width:200px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);padding:20px 12px;display:flex;flex-direction:column;gap:4px}
-.sidebar .logo{font-size:18px;font-weight:800;color:var(--cyan);margin-bottom:20px;letter-spacing:-0.5px}
+.sidebar{width:190px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);padding:20px 10px;display:flex;flex-direction:column;gap:2px}
+.sidebar .logo{font-size:16px;font-weight:800;color:var(--cyan);margin-bottom:16px;letter-spacing:-0.5px}
 .sidebar .logo span{color:var(--gold)}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:14px;transition:.2s}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:13px;transition:.2s}
 .nav-item:hover{background:var(--bg3);color:var(--text)}
-.nav-item.active{background:rgba(0,240,255,.1);color:var(--cyan)}
-.nav-item .icon{font-size:16px}
-
-/* MAIN CONTENT */
-.main{flex:1;padding:20px 24px;overflow-y:auto;max-height:100vh}
+.nav-item.active{background:rgba(0,240,255,.08);color:var(--cyan)}
+.nav-item .icon{font-size:15px}
+.main{flex:1;padding:18px 20px;overflow-y:auto;max-height:100vh}
 .page{display:none}
 .page.active{display:block}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.page-header h1{font-size:20px;font-weight:700}
+.page-header .sub{font-size:12px;color:var(--text2);margin-top:2px}
 
-/* HEADER */
-.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.page-header h1{font-size:22px;font-weight:700}
-.page-header .subtitle{font-size:13px;color:var(--text2);margin-top:2px}
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:16px}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px}
+.stat .n{font-size:22px;font-weight:700}
+.stat .l{font-size:11px;color:var(--text2);margin-top:1px}
 
-/* STATS ROW */
-.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
-.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
-.stat-card .num{font-size:24px;font-weight:700}
-.stat-card .label{font-size:12px;color:var(--text2);margin-top:2px}
-.stat-card .num.cyan{color:var(--cyan)}
-.stat-card .num.gold{color:var(--gold)}
-.stat-card .num.green{color:var(--green)}
-.stat-card .num.pink{color:var(--pink)}
-.stat-card .num.blue{color:var(--blue)}
-
-/* HIERARCHY TREE */
-.tree-container{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;overflow-x:auto}
-.tree{display:flex;flex-direction:column;align-items:center}
-.tree-row{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
-.tree-agent{display:flex;flex-direction:column;align-items:center;gap:6px}
-.tree-agent .node{background:var(--bg3);border:2px solid;border-radius:var(--radius);padding:10px 18px;text-align:center;min-width:100px;cursor:pointer;transition:.2s}
-.tree-agent .node:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,240,255,.15)}
-.tree-agent .node .name{font-size:14px;font-weight:700}
-.tree-agent .node .role{font-size:10px;color:var(--text2);margin-top:2px}
-.tree-agent .node .count{font-size:10px;color:var(--text2);margin-top:4px;opacity:.6}
-.tree-line{width:2px;height:16px;background:var(--border)}
-.tree-branch{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;padding:8px 0}
-.tree-unit{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;min-width:120px;font-size:12px}
-.tree-unit .u-name{font-weight:600;margin-bottom:4px}
-.tree-unit .u-dept{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
-.tree-unit .u-dept .tag{background:var(--bg);padding:2px 6px;border-radius:4px;font-size:10px;color:var(--text2)}
-.tree-unit .u-emp{font-size:10px;color:var(--text2);margin-top:3px;padding:1px 4px;border-left:2px solid var(--cyan);margin-bottom:1px}
+/* TREE */
+.tree-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;overflow-x:auto}
+.tree{display:flex;flex-direction:column;align-items:center;gap:2px}
+.tree-row{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+.node{background:var(--bg3);border:2px solid;border-radius:var(--radius);padding:8px 14px;text-align:center;min-width:90px;cursor:pointer;transition:.2s}
+.node:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,240,255,.12)}
+.node .nm{font-size:13px;font-weight:700}
+.node .rl{font-size:10px;color:var(--text2);margin-top:1px}
+.node .cnt{font-size:10px;color:var(--text2);opacity:.6;margin-top:3px}
+.node .path{font-size:9px;color:var(--text2);opacity:.4;margin-top:2px;font-family:monospace}
+.tree-ln{width:2px;height:14px;background:var(--border)}
+.tree-bu{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;padding:6px 0}
+.bu-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;min-width:110px;font-size:11px}
+.bu-card .bu-nm{font-weight:600;font-size:12px;margin-bottom:3px}
+.bu-card .bu-path{font-size:9px;color:var(--text2);opacity:.5;font-family:monospace;margin-bottom:4px}
+.bu-card .dept-tag{display:inline-block;background:var(--bg);padding:2px 6px;border-radius:4px;font-size:9px;margin:2px 2px 0 0;color:var(--text2)}
+.bu-card .emp{font-size:10px;color:var(--text2);margin-top:2px;padding-left:6px;border-left:2px solid var(--cyan)}
 
 /* TASK BOARD */
-.task-board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;min-height:200px}
-.col{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;min-height:200px}
-.col-header{font-size:13px;font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
-.col-header .count{background:var(--bg3);padding:0 6px;border-radius:4px;font-size:11px;color:var(--text2)}
-.task-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:.15s}
-.task-card:hover{border-color:var(--cyan)}
-.task-card .title{font-size:13px;font-weight:500;margin-bottom:4px}
-.task-card .meta{display:flex;gap:6px;flex-wrap:wrap;font-size:10px;color:var(--text2)}
-.task-card .meta .tag{padding:1px 6px;border-radius:4px}
-.tag-critical{background:rgba(255,51,68,.15);color:var(--red)}
-.tag-high{background:rgba(255,102,0,.15);color:var(--orange)}
-.tag-medium{background:rgba(255,215,0,.1);color:var(--gold)}
-.tag-low{background:rgba(136,136,160,.1);color:var(--text2)}
-.empty-col{text-align:center;color:var(--text2);padding:30px 0;font-size:13px}
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.col{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px;min-height:180px}
+.col-hdr{font-size:12px;font-weight:600;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+.col-hdr .cnt{background:var(--bg3);padding:0 5px;border-radius:4px;font-size:10px;color:var(--text2)}
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;margin-bottom:5px;font-size:12px}
+.card .ttl{font-weight:500;margin-bottom:3px}
+.card .meta{display:flex;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--text2)}
+.tag-crt{background:rgba(255,51,68,.15);color:var(--red);padding:1px 5px;border-radius:4px}
+.tag-hi{background:rgba(255,102,0,.15);color:var(--orange);padding:1px 5px;border-radius:4px}
+.tag-md{background:rgba(255,215,0,.1);color:var(--gold);padding:1px 5px;border-radius:4px}
+.emp{color:var(--text2)}
 
-/* AGENT DETAIL VIEW */
-.agent-section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
-.agent-header{display:flex;align-items:center;gap:14px;margin-bottom:14px}
-.agent-header .avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;border:2px solid}
-.agent-header .info .name{font-size:16px;font-weight:700}
-.agent-header .info .role{font-size:12px;color:var(--text2)}
-.agent-departments{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
-.unit-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px}
-.unit-card .unit-name{font-size:13px;font-weight:600;margin-bottom:6px}
-.unit-card .emp{font-size:12px;padding:3px 6px;border-left:2px solid var(--cyan);margin:2px 0;color:var(--text2)}
+/* AGENTS PAGE */
+.ag-sec{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.ag-hdr{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.ag-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;border:2px solid}
+.ag-nm{font-size:15px;font-weight:700}
+.ag-rl{font-size:11px;color:var(--text2)}
+.ag-path{font-size:10px;color:var(--text2);opacity:.5;font-family:monospace;margin-top:2px}
+.bu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:8px}
+.bu-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px}
+.bu-box .h{font-size:12px;font-weight:600;margin-bottom:2px}
+.bu-box .p{font-size:10px;color:var(--text2);font-family:monospace;margin-bottom:6px;opacity:.6}
+.bu-box .dept{background:var(--bg);padding:5px 8px;border-radius:4px;margin:3px 0;font-size:11px}
+.bu-box .dept .pth{font-size:9px;color:var(--text2);opacity:.4;font-family:monospace}
+.bu-box .emp{font-size:11px;padding:2px 0 2px 8px;border-left:2px solid var(--cyan);margin:2px 0}
 
-/* ACTIVITY LOG */
-.log-list{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
-.log-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
-.log-item:last-child{border-bottom:none}
-.log-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
-.log-dot.success{background:var(--green)}
-.log-dot.idle{background:var(--text2)}
-.log-dot.error{background:var(--red)}
-.log-agent{font-weight:600;color:var(--cyan)}
-.log-action{color:var(--text2)}
+/* LOGS */
+.logs{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px}
+.log{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.log:last-child{border:0}
+.dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.dot.ok{background:var(--green)}
+.dot.idle{background:var(--text2)}
+.dot.err{background:var(--red)}
+.l-agent{font-weight:600;color:var(--cyan)}
 
 /* CHAT */
-.chat-container{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;height:500px}
-.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
-.chat-msg{max-width:80%;padding:10px 14px;border-radius:var(--radius);font-size:14px;line-height:1.4}
-.chat-msg.bot{background:var(--bg3);align-self:flex-start;border:1px solid var(--border)}
-.chat-msg.user{background:rgba(0,240,255,.1);align-self:flex-end;border:1px solid rgba(0,240,255,.2)}
-.chat-msg .sender{font-size:11px;color:var(--text2);margin-bottom:3px}
-.chat-input{display:flex;gap:8px;padding:12px;border-top:1px solid var(--border)}
-.chat-input input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);outline:none;font-size:13px}
-.chat-input input:focus{border-color:var(--cyan)}
-.chat-input button{background:var(--cyan);color:var(--bg);border:none;border-radius:var(--radius-sm);padding:10px 18px;font-weight:600;cursor:pointer;font-size:13px}
+.chat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;height:440px}
+.cmsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.cmsg{max-width:80%;padding:8px 12px;border-radius:var(--radius);font-size:13px;line-height:1.4}
+.cmsg.bot{background:var(--bg3);align-self:flex-start;border:1px solid var(--border)}
+.cmsg.user{background:rgba(0,240,255,.08);align-self:flex-end;border:1px solid rgba(0,240,255,.15)}
+.cmsg .s{font-size:10px;color:var(--text2);margin-bottom:2px}
+.cinp{display:flex;gap:6px;padding:10px;border-top:1px solid var(--border)}
+.cinp input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text);outline:none;font-size:12px}
+.cinp input:focus{border-color:var(--cyan)}
+.cinp button{background:var(--cyan);color:var(--bg);border:none;border-radius:var(--radius-sm);padding:8px 14px;font-weight:600;cursor:pointer;font-size:12px}
 
 /* MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
-.modal-overlay.open{display:flex}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:440px;max-width:90vw}
-.modal h2{font-size:18px;margin-bottom:16px}
-.modal label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
-.modal input,.modal select,.modal textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13px;margin-bottom:12px;outline:none}
-.modal input:focus,.modal select:focus{border-color:var(--cyan)}
-.modal textarea{min-height:80px;resize:vertical}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
-.modal-actions button{padding:8px 18px;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;font-size:13px;border:none}
-.modal-actions .btn-primary{background:var(--cyan);color:var(--bg)}
-.modal-actions .btn-secondary{background:var(--bg3);color:var(--text)}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
+.modal.open{display:flex}
+.modal-in{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;width:400px;max-width:90vw}
+.modal-in h2{font-size:16px;margin-bottom:14px}
+.modal-in label{font-size:11px;color:var(--text2);margin-bottom:3px;display:block}
+.modal-in input,.modal-in select,.modal-in textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text);font-size:12px;margin-bottom:10px;outline:none}
+.modal-in input:focus,.modal-in select:focus{border-color:var(--cyan)}
+.modal-in textarea{min-height:60px;resize:vertical}
+.modal-acts{display:flex;gap:6px;justify-content:flex-end;margin-top:6px}
+.modal-acts button{padding:7px 14px;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;font-size:12px;border:none}
+.btn-pr{background:var(--cyan);color:var(--bg)}
+.btn-sec{background:var(--bg3);color:var(--text)}
 
-/* BUTTONS */
-button{font-family:inherit}
-.btn-new{background:var(--cyan);color:var(--bg);border:none;border-radius:var(--radius-sm);padding:8px 16px;font-weight:600;cursor:pointer;font-size:13px;transition:.2s}
+.btn{all:unset;cursor:pointer;font-family:inherit}
+.btn-new{background:var(--cyan);color:var(--bg);padding:7px 14px;border-radius:var(--radius-sm);font-weight:600;font-size:12px;cursor:pointer}
 .btn-new:hover{opacity:.85}
-.btn-sm{padding:4px 10px;font-size:11px;border-radius:4px;cursor:pointer;border:none;font-weight:500;transition:.15s}
+.btn-sm{padding:3px 8px;font-size:10px;border-radius:4px;cursor:pointer;border:none;font-family:inherit;font-weight:500;background:var(--bg);color:var(--text2);border:1px solid var(--border)}
 .btn-sm:hover{opacity:.8}
 
-/* RESPONSIVE */
-@media(max-width:900px){
- .sidebar{width:56px;padding:12px 8px}
- .sidebar .logo{font-size:14px}
+@media(max-width:800px){
+ .sidebar{width:50px;padding:10px 6px}
+ .sidebar .logo{font-size:12px}
  .nav-item span:not(.icon){display:none}
- .task-board{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));overflow-x:auto}
-}
-@media(max-width:600px){
- .main{padding:12px}
- .stats-row{grid-template-columns:repeat(2,1fr)}
+ .board{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
 }
 </style>
 </head><body>
 
-<!-- SIDEBAR -->
 <nav class="sidebar">
  <div class="logo">ADAM <span>OS</span></div>
- <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
-  <span class="icon">🏛️</span><span>Dashboard</span>
- </div>
- <div class="nav-item" data-page="tasks" onclick="switchPage('tasks')">
-  <span class="icon">📋</span><span>Tareas</span>
- </div>
- <div class="nav-item" data-page="agents" onclick="switchPage('agents')">
-  <span class="icon">🤖</span><span>Agentes</span>
- </div>
- <div class="nav-item" data-page="activity" onclick="switchPage('activity')">
-  <span class="icon">📡</span><span>Actividad</span>
- </div>
- <div class="nav-item" data-page="chat" onclick="switchPage('chat')">
-  <span class="icon">💬</span><span>Chat</span>
- </div>
+ <div class="nav-item active" data-page="dash" onclick="go('dash')"><span class="icon">🏛️</span><span>Dashboard</span></div>
+ <div class="nav-item" data-page="tasks" onclick="go('tasks')"><span class="icon">📋</span><span>Tareas</span></div>
+ <div class="nav-item" data-page="agents" onclick="go('agents')"><span class="icon">🤖</span><span>Agentes</span></div>
+ <div class="nav-item" data-page="activity" onclick="go('activity')"><span class="icon">📡</span><span>Actividad</span></div>
+ <div class="nav-item" data-page="chat" onclick="go('chat')"><span class="icon">💬</span><span>Chat</span></div>
 </nav>
 
-<!-- MAIN -->
-<div class="main" id="mainContent">
+<div class="main">
 
- <!-- ===== DASHBOARD ===== -->
- <div class="page active" id="page-dashboard">
-  <div class="page-header">
-   <div>
-    <h1>🏛️ Command Center</h1>
-    <div class="subtitle">ADAM OS System — Jerarquía v3</div>
-   </div>
-   <button class="btn-new" onclick="switchPage('tasks')">+ Nueva Tarea</button>
-  </div>
-  
-  <div class="stats-row" id="statsRow"></div>
-  <div class="tree-container"><div class="tree" id="hierarchyTree"></div></div>
-  
-  <div style="margin-top:20px">
-   <h2 style="font-size:16px;margin-bottom:10px">📡 Actividad Reciente</h2>
-   <div class="log-list" id="miniLog"></div>
-  </div>
+<div class="page active" id="page-dash">
+ <div class="page-header">
+  <div><h1>🏛️ Command Center</h1><div class="sub">ADAM OS System — estructura real de carpetas</div></div>
+  <button class="btn-new" onclick="go('tasks')">+ Tarea</button>
  </div>
-
- <!-- ===== TASKS ===== -->
- <div class="page" id="page-tasks">
-  <div class="page-header">
-   <div>
-    <h1>📋 Tablero de Tareas</h1>
-    <div class="subtitle">Natch da tareas a los agentes → ellos delegan a empleados</div>
-   </div>
-   <button class="btn-new" onclick="showNewTask()">+ Nueva Tarea</button>
-  </div>
-  <div id="dragHint" style="font-size:12px;color:var(--text2);margin-bottom:10px;text-align:center">Usa los botones para mover tareas entre columnas</div>
-  <div class="task-board" id="taskBoard"></div>
+ <div class="stats" id="statsRow"></div>
+ <div class="tree-wrap"><div class="tree" id="hierTree"></div></div>
+ <div style="margin-top:16px">
+  <h2 style="font-size:14px;margin-bottom:8px">📡 Última actividad</h2>
+  <div class="logs" id="miniLog"></div>
  </div>
+</div>
 
- <!-- ===== AGENTS ===== -->
- <div class="page" id="page-agents">
-  <div class="page-header">
-   <div>
-    <h1>🤖 Jerarquía de Agentes</h1>
-    <div class="subtitle">Agentes coordinadores → Unidades de negocio → Departamentos → Empleados</div>
-   </div>
-  </div>
-  <div id="agentsFullHierarchy"></div>
+<div class="page" id="page-tasks">
+ <div class="page-header">
+  <div><h1>📋 Tareas</h1><div class="sub">Los agentes reciben tareas de AXON y las delegan a empleados en sus departamentos</div></div>
+  <button class="btn-new" onclick="openModal()">+ Nueva</button>
  </div>
+ <div class="board" id="taskBoard"></div>
+</div>
 
- <!-- ===== ACTIVITY ===== -->
- <div class="page" id="page-activity">
-  <div class="page-header">
-   <div>
-    <h1>📡 Registro de Actividad</h1>
-    <div class="subtitle">Acciones de agentes y empleados en tiempo real</div>
-   </div>
-  </div>
-  <div class="log-list" id="fullLog"></div>
+<div class="page" id="page-agents">
+ <div class="page-header">
+  <div><h1>🤖 Jerarquía de Agentes</h1><div class="sub">Cada departamento del dashboard corresponde a una carpeta real en adam-os-system/</div></div>
  </div>
+ <div id="agentsFull"></div>
+</div>
 
- <!-- ===== CHAT ===== -->
- <div class="page" id="page-chat">
-  <div class="page-header">
-   <div>
-    <h1>💬 Chat con AXON</h1>
-    <div class="subtitle">Háblale al sistema — comandos, tareas, misiones</div>
-   </div>
-  </div>
-  <div class="chat-container">
-   <div class="chat-msgs" id="chatMessages"></div>
-   <div class="chat-input">
-    <input id="chatInput" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')sendChatMsg()">
-    <button onclick="sendChatMsg()">Enviar</button>
-   </div>
+<div class="page" id="page-activity">
+ <div class="page-header">
+  <div><h1>📡 Actividad</h1><div class="sub">Registro de acciones en todo el sistema</div></div>
+ </div>
+ <div class="logs" id="fullLog"></div>
+</div>
+
+<div class="page" id="page-chat">
+ <div class="page-header">
+  <div><h1>💬 Chat</h1><div class="sub">Háblale a AXON</div></div>
+ </div>
+ <div class="chat">
+  <div class="cmsgs" id="chatMsgs"></div>
+  <div class="cinp">
+   <input id="chatInp" placeholder="Escribe..." onkeydown="if(event.key==='Enter')sendChat()">
+   <button onclick="sendChat()">Enviar</button>
   </div>
  </div>
 </div>
 
-<!-- NEW TASK MODAL -->
-<div class="modal-overlay" id="taskModal">
- <div class="modal">
+<div class="modal" id="taskModal">
+ <div class="modal-in">
   <h2>📋 Nueva Tarea</h2>
-  <label>Título</label>
-  <input id="taskTitle" placeholder="¿Qué hay que hacer?">
-  <label>Descripción</label>
-  <textarea id="taskDesc" placeholder="Detalles de la tarea..."></textarea>
+  <label>Título</label><input id="tTitle">
+  <label>Descripción</label><textarea id="tDesc"></textarea>
   <label>Asignar a</label>
-  <select id="taskAssign">
-   <option value="AXON:agent">AXON (CEO)</option>
-   <option value="HERMES:agent">HERMES (Brazo Derecho)</option>
-   <option value="Axon-Life:agent">Axon-Life (Vida)</option>
-   <option value="Axon-Work:agent">Axon-Work (Trabajo)</option>
-   <option value="Axon-Music:agent">Axon-Music (Música)</option>
+  <select id="tAssign">
+   <option value="AXON">AXON (CEO)</option>
+   <option value="HERMES">HERMES (Brazo Derecho)</option>
   </select>
   <label>Prioridad</label>
-  <select id="taskPriority">
+  <select id="tPri">
    <option value="critical">Crítica</option>
    <option value="high">Alta</option>
    <option value="medium" selected>Media</option>
   </select>
-  <div class="modal-actions">
-   <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
-   <button class="btn-primary" onclick="createTask()">Crear Tarea</button>
+  <div class="modal-acts">
+   <button class="btn-sec" onclick="closeModal()">Cancelar</button>
+   <button class="btn-pr" onclick="createTask()">Crear</button>
   </div>
  </div>
 </div>
 
 <script>
-// ===== STATE =====
-const STATE = {
- hierarchy: [],
- tasks: [],
- logs: [],
- chatMsgId: 0,
- currentPage: 'dashboard'
-};
+const S={hierarchy:[],tasks:[],logs:[],chatId:0,page:'dash'};
 
-// ===== DATA LOADERS =====
-async function loadAll() {
- const [h, t, l] = await Promise.all([
+async function load(){
+ const [h,t,l]=await Promise.all([
   fetch('/api/hierarchy').then(r=>r.json()),
   fetch('/api/tasks').then(r=>r.json()),
   fetch('/api/agent-logs?limit=8').then(r=>r.json()),
  ]);
- STATE.hierarchy = h;
- STATE.tasks = t;
- STATE.logs = l;
- renderAll();
+ S.hierarchy=h; S.tasks=t; S.logs=l; renderAll();
 }
 
-function renderAll() {
- renderStats();
- renderHierarchyTree();
- renderTaskBoard();
- renderAgentsFull();
- renderMiniLog();
- renderFullLog();
- renderChat();
-}
+function renderAll(){renderStats();renderTree();renderBoard();renderAgents();renderMiniLog();renderFullLog();renderChat();}
 
-// ===== PAGE SWITCHING =====
-function switchPage(page) {
+function go(p){
  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
- document.querySelector(`[data-page="${page}"]`).classList.add('active');
- document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
- document.getElementById(`page-${page}`).classList.add('active');
- STATE.currentPage = page;
- if (page === 'activity') renderFullLog();
- if (page === 'chat') renderChat(); renderChatScroll();
+ document.querySelector(`[data-page="${p}"]`).classList.add('active');
+ document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
+ document.getElementById('page-'+p).classList.add('active');
+ S.page=p;
+ if(p==='activity')renderFullLog();
+ if(p==='chat'){renderChat();setTimeout(()=>{let e=document.getElementById('chatMsgs');if(e)e.scrollTop=e.scrollHeight},100)}
 }
 
 // ===== STATS =====
-function renderStats() {
- const tasks = STATE.tasks;
- const agents = STATE.hierarchy;
- const totalEmps = agents.reduce((s,a)=>{
-  return s + (a.units||[]).reduce((su,u)=>{
-   return su + (u.employees||[]).length + (u.children||[]).reduce((sc,c)=>{
-    return sc + (c.employees||[]).length;
-   },0);
-  },0);
- },0);
- 
- document.getElementById('statsRow').innerHTML = `
-  <div class="stat-card"><div class="num cyan">${tasks.filter(t=>t.status==='pending').length}</div><div class="label">📌 Por Hacer</div></div>
-  <div class="stat-card"><div class="num gold">${tasks.filter(t=>t.status==='in_progress').length}</div><div class="label">⚡️ En Proceso</div></div>
-  <div class="stat-card"><div class="num blue">${tasks.filter(t=>t.status==='realizado'||t.status==='review').length}</div><div class="label">💪🏻 En Revisión</div></div>
-  <div class="stat-card"><div class="num green">${tasks.filter(t=>t.status==='completed').length}</div><div class="label">✅ Completado</div></div>
-  <div class="stat-card"><div class="num pink">${agents.length}</div><div class="label">🤖 Agentes</div></div>
-  <div class="stat-card"><div class="num blue">${totalEmps}</div><div class="label">👥 Empleados</div></div>
+function renderStats(){
+ const t=S.tasks;
+ let emps=0;
+ S.hierarchy.forEach(a=>(a.business_units||[]).forEach(bu=>(bu.departments||[]).forEach(d=>emps+=(d.employees||[]).length)));
+ const depts = S.hierarchy.reduce((s,a)=>s+(a.business_units||[]).reduce((su,bu)=>su+(bu.departments||[]).length,0),0);
+ document.getElementById('statsRow').innerHTML=`
+  <div class="stat"><div class="n" style="color:var(--cyan)">${t.filter(x=>x.status==='pending').length}</div><div class="l">📌 Pendientes</div></div>
+  <div class="stat"><div class="n" style="color:var(--gold)">${t.filter(x=>x.status==='in_progress').length}</div><div class="l">⚡️ En curso</div></div>
+  <div class="stat"><div class="n" style="color:var(--green)">${t.filter(x=>x.status==='completed').length}</div><div class="l">✅ Completadas</div></div>
+  <div class="stat"><div class="n" style="color:var(--pink)">${S.hierarchy.length}</div><div class="l">🤖 Agentes</div></div>
+  <div class="stat"><div class="n" style="color:var(--gold)">2</div><div class="l">🏢 Unidades</div></div>
+  <div class="stat"><div class="n" style="color:var(--blue)">${depts}</div><div class="l">📂 Departamentos</div></div>
+  <div class="stat"><div class="n" style="color:var(--green)">${emps}</div><div class="l">👥 Empleados</div></div>
  `;
 }
 
-// ===== HIERARCHY TREE =====
-function renderHierarchyTree() {
- const agents = STATE.hierarchy.filter(a => a.level === 0 || a.level === 1);
- // Build real tree starting from AXON
- const tree = document.getElementById('hierarchyTree');
- 
- let html = '<div class="tree-row">';
- agents.filter(a=>a.name==='AXON').forEach(a => {
-  html += renderTreeNode(a);
- });
- html += '</div>';
- 
- // HERMES level
- const hermes = agents.filter(a=>a.name==='HERMES');
- hermes.forEach(h => {
-  html += '<div class="tree-line"></div>';
-  html += '<div class="tree-row">' + renderTreeNode(h) + '</div>';
-  html += '<div class="tree-line"></div>';
-  // Subagents under HERMES
-  const subagents = STATE.hierarchy.filter(a => a.parent_id === h.id);
-  html += '<div class="tree-row">';
-  subagents.forEach(sa => {
-   html += `<div class="tree-agent">`;
-   html += renderTreeNode(sa);
-   // Units
-   const units = sa.units || [];
-   if (units.length) {
-    html += '<div class="tree-branch">';
-    units.forEach(u => {
-     html += renderUnitNode(u);
-    });
-    html += '</div>';
-   }
-   html += '</div>';
+// ===== TREE =====
+function renderTree(){
+ const agents = S.hierarchy;
+ let html='<div class="tree-row">';
+ agents.filter(a=>a.name==='AXON').forEach(a=>html+=nodeHtml(a));
+ html+='</div><div class="tree-ln"></div><div class="tree-row">';
+ agents.filter(a=>a.name==='HERMES').forEach(a=>html+=nodeHtml(a));
+ html+='</div><div class="tree-ln"></div><div class="tree-row">';
+ // Business units under HERMES
+ const hermes = agents.find(a=>a.name==='HERMES');
+ if(hermes){
+  hermes.business_units.forEach(bu=>{
+   const depts = (bu.departments||[]).map(d=>`<span class="dept-tag">📂 ${d.dir_name}</span>`).join('');
+   const empCount = (bu.departments||[]).reduce((s,d)=>s+(d.employees||[]).length,0);
+   html+=`<div class="bu-card"><div class="bu-nm" style="color:${bu.color||'var(--gold)'}">${bu.short_name}</div>
+    <div class="bu-path">📁 2-teams/${bu.dir_name}/</div>
+    <div>${depts}</div>
+    <div class="emp">👥 ${empCount} empleados</div></div>`;
   });
-  html += '</div>';
- });
- 
- tree.innerHTML = html;
+ }
+ html+='</div>';
+ document.getElementById('hierTree').innerHTML=html;
 }
 
-function renderTreeNode(agent) {
- const colors = {AXON:var(--cyan),HERMES:var(--pink),'Axon-Life':var(--green),'Axon-Work':var(--gold),'Axon-Music':var(--blue)};
- const color = colors[agent.name] || '#666680';
- const empCount = countEmps(agent);
- return `<div class="tree-agent">
-  <div class="node" style="border-color:${color}" onclick="switchPage('agents')">
-   <div class="name" style="color:${color}">${agent.name}</div>
-   <div class="role">${agent.role.split(':')[0].substring(0,30)}</div>
-   <div class="count">${empCount > 0 ? empCount + ' empleados' : 'directivo'}</div>
-  </div>
+function nodeHtml(a){
+ const colors={AXON:'var(--cyan)',HERMES:'var(--pink)'};
+ const c=colors[a.name]||'var(--cyan)';
+ const bu = a.business_units||[];
+ const tdepts = bu.reduce((s,bu)=>s+(bu.departments||[]).length,0);
+ const temps = bu.reduce((s,bu)=>s+bu.departments.reduce((sd,d)=>sd+(d.employees||[]).length,0),0);
+ return `<div class="node" style="border-color:${c}" onclick="go('agents')">
+  <div class="nm" style="color:${c}">${a.name}</div>
+  <div class="rl">${a.role.split(':')[0].substring(0,28)}</div>
+  <div class="cnt">${tdepts} dept · ${temps} emp</div>
+  <div class="path">${a.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>
  </div>`;
-}
-
-function renderUnitNode(unit) {
- const empList = (unit.employees||[]).map(e=>`<div class="u-emp" style="border-color:${unit.color||'var(--cyan)'}">👤 ${e.name}</div>`).join('');
- const children = (unit.children||[]).map(c => {
-  const emps = (c.employees||[]).map(e=>`<div class="u-emp">${e.name}</div>`).join('');
-  return `<div class="u-dept"><span class="tag">${c.short_name||c.name}</span></div>${emps}`;
- }).join('');
- return `<div class="tree-unit">
-  <div class="u-name" style="color:${unit.color||'var(--gold)'}">${unit.name}</div>
-  ${empList}
-  ${children}
- </div>`;
-}
-
-function countEmps(agent) {
- return (agent.units||[]).reduce((s,u)=>{
-  return s + (u.employees||[]).length + (u.children||[]).reduce((sc,c)=>{
-   return sc + (c.employees||[]).length;
-  },0);
- },0);
 }
 
 // ===== TASK BOARD =====
-function renderTaskBoard() {
- const cols = [
-  {key:'pending',label:'📌 Por Hacer'},
-  {key:'in_progress',label:'⚡️ En Proceso'},
-  {key:'realizado',label:'💪🏻 Realizado'},
-  {key:'review',label:'🔍 Revisión'},
-  {key:'completed',label:'✅ Completado'},
+function renderBoard(){
+ const cols=[
+  {k:'pending',l:'📌 Por Hacer'},{k:'in_progress',l:'⚡️ En Proceso'},
+  {k:'realizado',l:'💪🏻 Realizado'},{k:'review',l:'🔍 Revisión'},{k:'completed',l:'✅ Completado'}
  ];
- 
- let html = '';
- cols.forEach(col => {
-  const tasks = STATE.tasks.filter(t => t.status === col.key);
-  html += `<div class="col">
-   <div class="col-header">${col.label} <span class="count">${tasks.length}</span></div>
-   ${tasks.length ? tasks.map(t => renderTaskCard(t)).join('') : '<div class="empty-col">—</div>'}
-  </div>`;
+ let html='';
+ cols.forEach(c=>{
+  const tasks=S.tasks.filter(t=>t.status===c.k);
+  html+=`<div class="col"><div class="col-hdr">${c.l}<span class="cnt">${tasks.length}</span></div>
+   ${tasks.length?tasks.map(t=>cardHtml(t)).join(''):'<div style="text-align:center;padding:20px 0;color:var(--text2);font-size:12px">—</div>'}</div>`;
  });
- document.getElementById('taskBoard').innerHTML = html;
+ document.getElementById('taskBoard').innerHTML=html;
 }
 
-function renderTaskCard(t) {
- const pClass = `tag-${t.priority || 'medium'}`;
- const pLabel = {critical:'Crítica',high:'Alta',medium:'Media',low:'Baja'}[t.priority] || 'Media';
- 
- // Status actions
- const actions = [];
- if (t.status === 'pending') actions.push({status:'in_progress',label:'▶ Iniciar'});
- if (t.status === 'in_progress') actions.push({status:'realizado',label:'💪 Hecho'});
- if (t.status === 'realizado') actions.push({status:'review',label:'🔍 Revisar'});
- if (t.status === 'review') actions.push({status:'completed',label:'✅ Aprobar'});
- if (t.status === 'completed') actions.push({status:'pending',label:'↩ Reabrir'});
- 
- return `<div class="task-card">
-  <div class="title">${t.title}</div>
-  <div class="meta">
-   <span class="tag ${pClass}">${pLabel}</span>
-   <span>👤 ${t.assigned_to}</span>
-   ${t.department_name ? `<span>🏢 ${t.department_name}</span>` : ''}
-  </div>
-  <div style="margin-top:6px;display:flex;gap:4px">
-   ${actions.map(a => `<button class="btn-sm" style="background:var(--bg);color:var(--text2);border:1px solid var(--border)" onclick="moveTask(${t.id},'${a.status}')">${a.label}</button>`).join('')}
-   ${t.status === 'pending' ? `<button class="btn-sm" style="background:rgba(255,51,68,.2);color:var(--red);border:1px solid rgba(255,51,68,.3)" onclick="deleteTask(${t.id})">🗑</button>` : ''}
-  </div>
- </div>`;
+function cardHtml(t){
+ const p={critical:'tag-crt Crítica',high:'tag-hi Alta',medium:'tag-md Media',low:'tag-md Baja'}[t.priority]||'tag-md Media';
+ const [pclass,plabel]=p.split(' ');
+ const acts=[];
+ if(t.status==='pending')acts.push({s:'in_progress',l:'▶'});
+ if(t.status==='in_progress')acts.push({s:'realizado',l:'💪'});
+ if(t.status==='realizado')acts.push({s:'review',l:'🔍'});
+ if(t.status==='review')acts.push({s:'completed',l:'✅'});
+ if(t.status==='completed')acts.push({s:'pending',l:'↩'});
+ return `<div class="card"><div class="ttl">${t.title}</div><div class="meta">
+  <span class="${pclass}">${plabel}</span><span>👤 ${t.assigned_to}</span>
+  ${t.department_path?`<span>📂 ${t.department_path.replace('/home/adamcloud/adam-os-system/2-teams/','')}</span>`:''}
+ </div><div style="margin-top:4px;display:flex;gap:3px">
+  ${acts.map(a=>`<button class="btn-sm" onclick="mv(${t.id},'${a.s}')">${a.l}</button>`).join('')}
+  ${t.status==='pending'?`<button class="btn-sm" style="color:var(--red)" onclick="del(${t.id})">🗑</button>`:''}
+ </div></div>`;
 }
 
-async function moveTask(id, status) {
- await fetch(`/api/tasks/${id}`, {
-  method:'PUT', headers:{'Content-Type':'application/json'},
-  body: JSON.stringify({status})
- });
- STATE.tasks = await fetch('/api/tasks').then(r=>r.json());
- renderTaskBoard();
- renderStats();
+async function mv(id,s){
+ await fetch(`/api/tasks/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:s})});
+ S.tasks=await fetch('/api/tasks').then(r=>r.json());
+ renderBoard();renderStats();
 }
 
-async function deleteTask(id) {
- if (!confirm('¿Eliminar tarea?')) return;
+async function del(id){
+ if(!confirm('¿Eliminar?'))return;
  await fetch(`/api/tasks/${id}`,{method:'DELETE'});
- STATE.tasks = STATE.tasks.filter(t=>t.id!==id);
- renderTaskBoard();
- renderStats();
+ S.tasks=S.tasks.filter(t=>t.id!==id);
+ renderBoard();renderStats();
 }
 
-function showNewTask() {
- document.getElementById('taskModal').classList.add('open');
- document.getElementById('taskTitle').value = '';
- document.getElementById('taskDesc').value = '';
- document.getElementById('taskAssign').value = 'AXON:agent';
- document.getElementById('taskPriority').value = 'medium';
-}
-
-function closeModal() {
- document.getElementById('taskModal').classList.remove('open');
-}
-
-async function createTask() {
- const title = document.getElementById('taskTitle').value.trim();
- if (!title) return;
- const [assigned, atype] = document.getElementById('taskAssign').value.split(':');
- const data = {
-  title,
-  description: document.getElementById('taskDesc').value.trim(),
-  assigned_to: assigned,
-  assigned_to_type: atype,
-  priority: document.getElementById('taskPriority').value,
- };
- await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
- closeModal();
- STATE.tasks = await fetch('/api/tasks').then(r=>r.json());
- renderTaskBoard();
- renderStats();
-}
-
-// ===== AGENTS FULL VIEW =====
-function renderAgentsFull() {
- const agents = STATE.hierarchy;
- let html = '';
- 
- agents.filter(a => a.name === 'AXON').forEach(a => {
-  html += renderAgentSection(a);
+// ===== AGENTS FULL =====
+function renderAgents(){
+ const agents = S.hierarchy;
+ let html='';
+ agents.filter(a=>a.name==='AXON').forEach(a=>html+=agSec(a));
+ agents.filter(a=>a.name==='HERMES').forEach(a=>{
+  html+=agSec(a);
+  // Business units
+  for(const bu of (a.business_units||[])){
+   const depts = (bu.departments||[]).map(d=>{
+    const emps=(d.employees||[]).map(e=>`<div class="emp">👤 ${e.name} — <span style="color:var(--text2)">${e.role}</span></div>`).join('');
+    return `<div class="dept">
+     <div style="font-weight:600;font-size:12px">📂 ${d.dir_name}/</div>
+     <div class="pth">${d.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>
+     ${emps||'<div style="font-size:10px;color:var(--text2);padding:2px 0">Sin empleados</div>'}
+    </div>`;
+   }).join('');
+   html+=`<div class="bu-box"><div class="h" style="color:${bu.color||'var(--gold)'}">${bu.name}</div>
+    <div class="p">📁 ${bu.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div>${depts}</div>`;
+  }
  });
- agents.filter(a => a.name === 'HERMES').forEach(a => {
-  html += renderAgentSection(a);
- });
- agents.filter(a => a.parent_id && agents.find(p => p.id === a.parent_id && p.name === 'HERMES')).forEach(a => {
-  html += renderAgentSection(a);
- });
- 
- document.getElementById('agentsFullHierarchy').innerHTML = html;
+ document.getElementById('agentsFull').innerHTML=html;
 }
 
-function renderAgentSection(agent) {
- const colors = {AXON:var(--cyan),HERMES:var(--pink),'Axon-Life':var(--green),'Axon-Work':var(--gold),'Axon-Music':var(--blue)};
- const color = colors[agent.name] || '#666680';
- 
- const unitsHtml = (agent.units||[]).map(u => {
-  const empHtml = (u.employees||[]).map(e => `<div class="emp">👤 ${e.name} — <span style="color:var(--text2)">${e.role}</span></div>`).join('');
-  const childrenHtml = (u.children||[]).map(c => {
-   const cEmpHtml = (c.employees||[]).map(e => `<div class="emp">👤 ${e.name} — <span style="color:var(--text2)">${e.role}</span></div>`).join('');
-   return `<div style="margin:4px 0;padding:6px 8px;background:var(--bg);border-radius:6px">
-    <div style="font-size:12px;font-weight:600;color:${c.color||'var(--text)'}">${c.name}</div>
-    ${cEmpHtml || '<div style="font-size:11px;color:var(--text2);padding:4px 0">Sin empleados</div>'}
-   </div>`;
-  }).join('');
-  
-  return `<div class="unit-card">
-   <div class="unit-name" style="color:${u.color||'var(--text)'}">${u.short_name||u.name}</div>
-   <div style="font-size:11px;color:var(--text2);margin-bottom:6px">${u.description||u.unit_type}</div>
-   ${empHtml}
-   ${childrenHtml}
-   ${!empHtml && !childrenHtml ? '<div style="font-size:11px;color:var(--text2)">Sin empleados asignados</div>' : ''}
-  </div>`;
- }).join('');
- 
- const childAgents = (agent.children_agents||[]).map(ca =>
-  `<div style="margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid ${colors[ca.name]||'var(--cyan)'}">
-   <div style="font-size:13px;font-weight:600;color:${colors[ca.name]||'var(--cyan)'}">${ca.name}</div>
-   <div style="font-size:11px;color:var(--text2)">${ca.role}</div>
-  </div>`
- ).join('');
- 
- return `<div class="agent-section">
-  <div class="agent-header">
-   <div class="avatar" style="border-color:${color};color:${color}">${agent.name[0]}</div>
-   <div class="info">
-    <div class="name" style="color:${color}">${agent.name}</div>
-    <div class="role">${agent.role}</div>
-   </div>
-  </div>
-  ${childAgents}
-  <div class="agent-departments">${unitsHtml}</div>
- </div>`;
+function agSec(a){
+ const c={AXON:'var(--cyan)',HERMES:'var(--pink)'}[a.name]||'var(--cyan)';
+ return `<div class="ag-sec"><div class="ag-hdr">
+  <div class="ag-av" style="border-color:${c};color:${c}">${a.name[0]}</div>
+  <div><div class="ag-nm" style="color:${c}">${a.name}</div><div class="ag-rl">${a.role}</div>
+  <div class="ag-path">📁 ${a.dir_path.replace('/home/adamcloud/adam-os-system/','')}</div></div>
+ </div></div>`;
 }
 
 // ===== LOGS =====
-function renderMiniLog() {
- const logs = STATE.logs.slice(0,5);
- document.getElementById('miniLog').innerHTML = logs.map(l => renderLogItem(l)).join('');
+function renderMiniLog(){
+ document.getElementById('miniLog').innerHTML=S.logs.slice(0,5).map(l=>logHtml(l)).join('');
 }
-
-function renderFullLog() {
- let all = STATE.logs;
- document.getElementById('fullLog').innerHTML = all.length ? all.map(l => renderLogItem(l)).join('') : '<div style="text-align:center;padding:40px;color:var(--text2)">Sin actividad registrada aún</div>';
+function renderFullLog(){
+ document.getElementById('fullLog').innerHTML=S.logs.length?S.logs.map(l=>logHtml(l)).join(''):'<div style="text-align:center;padding:30px;color:var(--text2);font-size:13px">Sin actividad</div>';
 }
-
-function renderLogItem(l) {
- return `<div class="log-item">
-  <div class="log-dot ${l.status}"></div>
-  <div>
-   <span class="log-agent">${l.agent_name}</span>
-   <span class="log-action">${l.action}</span>
-   ${l.target ? `→ <span style="color:var(--gold)">${l.target}</span>` : ''}
-   <div style="font-size:11px;color:var(--text2)">${l.details || l.timestamp || ''}</div>
-  </div>
- </div>`;
+function logHtml(l){
+ return `<div class="log"><div class="dot ${l.status}"></div><div>
+  <span class="l-agent">${l.agent_name}</span> <span style="color:var(--text2)">${l.action}</span>
+  ${l.target?`→ <span style="color:var(--gold)">${l.target}</span>`:''}
+  <div style="font-size:10px;color:var(--text2)">${l.details||l.timestamp||''}</div></div></div>`;
 }
 
 // ===== CHAT =====
-async function renderChat() {
- const msgs = await fetch(`/api/chat?since_id=${STATE.chatMsgId}`).then(r=>r.json());
- if (!msgs.length) return;
- STATE.chatMsgId = Math.max(...msgs.map(m=>m.id));
- const el = document.getElementById('chatMessages');
- msgs.forEach(m => {
-  const isUser = m.sender !== 'AXON';
-  el.innerHTML += `<div class="chat-msg ${isUser ? 'user' : 'bot'}">
-   <div class="sender">${m.sender}</div>
-   ${m.message}
-  </div>`;
+async function renderChat(){
+ const msgs=await fetch(`/api/chat?since_id=${S.chatId}`).then(r=>r.json());
+ if(!msgs.length)return;
+ S.chatId=Math.max(...msgs.map(m=>m.id));
+ const el=document.getElementById('chatMsgs');
+ msgs.forEach(m=>{
+  const u=m.sender!=='AXON';
+  el.innerHTML+=`<div class="cmsg ${u?'user':'bot'}"><div class="s">${m.sender}</div>${m.message}</div>`;
  });
- renderChatScroll();
+ el.scrollTop=el.scrollHeight;
 }
-
-function renderChatScroll() {
- const el = document.getElementById('chatMessages');
- el.scrollTop = el.scrollHeight;
-}
-
-async function sendChatMsg() {
- const input = document.getElementById('chatInput');
- const msg = input.value.trim();
- if (!msg) return;
- input.value = '';
+async function sendChat(){
+ const inp=document.getElementById('chatInp');
+ const msg=inp.value.trim();
+ if(!msg)return;
+ inp.value='';
  await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
- 
- // Auto-response from AXON
- const response = generateAxonResponse(msg);
- setTimeout(async () => {
-  await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender:'AXON',message:response})});
+ const res=genRes(msg);
+ setTimeout(async()=>{
+  await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender:'AXON',message:res})});
   renderChat();
- }, 500);
+ },400);
  renderChat();
 }
+function genRes(m){
+ const l=m.toLowerCase();
+ if(l.includes('tarea')) return '✅ Recibido. Crealá desde el botón + Nueva en la pestaña Tareas. ¿A qué departamento va?';
+ if(l.includes('hola')||l.includes('buenos')) return '¡Bienvenido, Natch! 🚀 El Command Center ahora refleja las carpetas reales: adam-grafica/ (8 dept) y midisoft/ (10 dept). ¿Qué tal se ve?';
+ if(l.includes('quién')||l.includes('quien')||l.includes('jerarquía')) return 'Tenemos a AXON (CEO) → HERMES → ADAM GRÁFICA + MIDI SOFT con 18 departamentos totales. Cada uno con su carpeta real en 2-teams/.';
+ return 'Entendido. El sistema está monitoreando. ¿Necesitas algo específico?';
+}
 
-function generateAxonResponse(msg) {
- const lower = msg.toLowerCase();
- if (lower.includes('tarea') || lower.includes('task')) return '✅ Recibido. Dame los detalles y la creo en el tablero. ¿A qué agente se la asigno?';
- if (lower.includes('hola') || lower.includes('buenos')) return '¡Bienvenido al Command Center, Natch! 🚀 Todo listo para trabajar. ¿Qué vamos a conquistar hoy?';
- if (lower.includes('quién') || lower.includes('quien')) return 'Aquí tienes la jerarquía: AXON (CEO) → HERMES → Axon-Life, Axon-Work, Axon-Music. Cada subagente tiene sus unidades y empleados. Revisa la pestaña Agentes para más detalle.';
- if (lower.includes('gracias')) return '¡Para eso estoy, mi rey! 💪 Codo a codo hacia la conquista total.';
- return 'Entendido. Estoy monitoreando la jerarquía y las tareas. ¿Necesitas algo específico?';
+// ===== MODAL =====
+function openModal(){document.getElementById('taskModal').classList.add('open')}
+function closeModal(){document.getElementById('taskModal').classList.remove('open')}
+async function createTask(){
+ const title=document.getElementById('tTitle').value.trim();
+ if(!title)return;
+ await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+  title,description:document.getElementById('tDesc').value.trim(),
+  assigned_to:document.getElementById('tAssign').value,
+  priority:document.getElementById('tPri').value,
+ })});
+ closeModal();
+ S.tasks=await fetch('/api/tasks').then(r=>r.json());
+ renderBoard();renderStats();
 }
 
 // ===== POLLING =====
-setInterval(async () => {
- const [t, l] = await Promise.all([
+setInterval(async()=>{
+ const [t,l]=await Promise.all([
   fetch('/api/tasks').then(r=>r.json()),
   fetch('/api/agent-logs?limit=8').then(r=>r.json()),
  ]);
- const changed = JSON.stringify(t) !== JSON.stringify(STATE.tasks);
- STATE.tasks = t;
- STATE.logs = l;
- if (changed) { renderTaskBoard(); renderStats(); }
+ const changed=JSON.stringify(t)!==JSON.stringify(S.tasks);
+ S.tasks=t;S.logs=l;
+ if(changed){renderBoard();renderStats();}
  renderMiniLog();
-}, 5000);
+},5000);
+setInterval(()=>renderChat(),8000);
 
-setInterval(() => renderChat(), 8000);
-
-// ===== INIT =====
-loadAll();
+load();
 </script>
 </body></html>
