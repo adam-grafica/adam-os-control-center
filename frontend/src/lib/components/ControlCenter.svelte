@@ -252,6 +252,35 @@
   let newKeyValue = $state('');
   let newKeyLabel = $state('');
   let keySaveResult = $state<string | null>(null);
+  let keySaveError = $state(false);
+  let providerError = $state(false);
+  let keyValueError = $state(false);
+  let useCustomProvider = $state(false);
+
+  const knownProviders: Array<{ id: string; label: string; category: string }> = [
+    // Language models
+    { id: 'opencode-zen', label: 'OpenCode Zen', category: 'Language' },
+    { id: 'openrouter', label: 'OpenRouter', category: 'Language' },
+    { id: 'nvidia', label: 'NVIDIA NIM', category: 'Language' },
+    { id: 'mistral', label: 'Mistral AI', category: 'Language' },
+    { id: 'anthropic', label: 'Anthropic', category: 'Language' },
+    { id: 'deepseek', label: 'DeepSeek', category: 'Language' },
+    { id: 'openai', label: 'OpenAI', category: 'Language' },
+    { id: 'groq', label: 'Groq', category: 'Language' },
+    { id: 'google', label: 'Google Gemini', category: 'Language' },
+    // Vision / Image
+    { id: 'gemini', label: 'Google Gemini Vision', category: 'Vision' },
+    { id: 'google-ai-studio', label: 'Google AI Studio', category: 'Vision' },
+  ];
+
+  let providersByCategory = $derived(() => {
+    const cats: Record<string, typeof knownProviders> = {};
+    for (const p of knownProviders) {
+      if (!cats[p.category]) cats[p.category] = [];
+      cats[p.category].push(p);
+    }
+    return cats;
+  });
 
   async function loadKeys() {
     try {
@@ -263,8 +292,22 @@
   }
 
   async function saveKey() {
-    if (!newKeyProvider.trim() || !newKeyValue.trim()) {
-      keySaveResult = 'Error: Provider and Key are required';
+    // Reset validation
+    providerError = false;
+    keyValueError = false;
+    keySaveError = false;
+
+    const provider = useCustomProvider ? newKeyProvider.trim() : newKeyProvider.trim();
+    if (!provider) {
+      providerError = true;
+      keySaveResult = 'Error: Provider is required';
+      keySaveError = true;
+      return;
+    }
+    if (!newKeyValue.trim()) {
+      keyValueError = true;
+      keySaveResult = 'Error: API Key value is required';
+      keySaveError = true;
       return;
     }
     try {
@@ -272,26 +315,30 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          provider: newKeyProvider.trim(),
+          provider: provider,
           key: newKeyValue.trim(),
           label: newKeyLabel.trim() || undefined,
         }),
       });
       if (res.ok) {
         keySaveResult = '✓ Key saved successfully!';
+        keySaveError = false;
         newKeyProvider = '';
         newKeyValue = '';
         newKeyLabel = '';
         showAddKey = false;
+        useCustomProvider = false;
         loadKeys();
       } else {
         const err = await res.json();
         keySaveResult = `Error: ${err.detail || res.statusText}`;
+        keySaveError = true;
       }
     } catch (e: any) {
       keySaveResult = `Failed: ${e.message}`;
+      keySaveError = true;
     }
-    setTimeout(() => { keySaveResult = null; }, 4000);
+    setTimeout(() => { keySaveResult = null; }, 5000);
   }
 
   async function testKey(keyId: string) {
@@ -688,15 +735,63 @@
 
         {#if showAddKey}
           <div class="add-key-form">
-            <input type="text" class="ak-input" placeholder="Provider (e.g. openrouter, anthropic)" bind:value={newKeyProvider} />
-            <input type="password" class="ak-input" placeholder="API Key" bind:value={newKeyValue} />
-            <input type="text" class="ak-input" placeholder="Label (optional)" bind:value={newKeyLabel} />
+            <!-- Provider Select -->
+            <label class="ak-label" class:ak-label-error={providerError}>
+              Provider <span class="required">*</span>
+            </label>
+            <select
+              class="ak-select"
+              class:ak-input-error={providerError}
+              bind:value={newKeyProvider}
+              onchange={(e) => { useCustomProvider = (e.target as HTMLSelectElement).value === '__custom__'; }}
+            >
+              <option value="">— Select provider —</option>
+              <optgroup label="🔤 Language Models">
+                {#each knownProviders.filter(p => p.category === 'Language') as prov}
+                  <option value={prov.id}>{prov.label}</option>
+                {/each}
+              </optgroup>
+              <optgroup label="👁️ Vision / Image">
+                {#each knownProviders.filter(p => p.category === 'Vision') as prov}
+                  <option value={prov.id}>{prov.label}</option>
+                {/each}
+              </optgroup>
+              <option value="__custom__">✏️ Other (type provider name)</option>
+            </select>
+            {#if providerError}
+              <span class="field-error">Please select a provider</span>
+            {/if}
+
+            {#if useCustomProvider}
+              <label class="ak-label">Custom Provider Name <span class="required">*</span></label>
+              <input type="text" class="ak-input" placeholder="e.g. together, cohere" bind:value={newKeyProvider} />
+            {/if}
+
+            <!-- API Key Value -->
+            <label class="ak-label" class:ak-label-error={keyValueError}>
+              API Key <span class="required">*</span>
+            </label>
+            <input
+              type="password"
+              class="ak-input"
+              class:ak-input-error={keyValueError}
+              placeholder="sk-..."
+              bind:value={newKeyValue}
+            />
+            {#if keyValueError}
+              <span class="field-error">API Key value is required</span>
+            {/if}
+
+            <!-- Label -->
+            <label class="ak-label">Label <span class="optional">(optional)</span></label>
+            <input type="text" class="ak-input" placeholder="e.g. Production, Dev, Personal" bind:value={newKeyLabel} />
+
             <button class="save-btn" onclick={saveKey}>💾 Save Key</button>
           </div>
         {/if}
 
         {#if keySaveResult}
-          <div class="key-result" class:success={keySaveResult.includes('saved') || keySaveResult.includes('deleted')} class:error={keySaveResult.includes('Error') || keySaveResult.includes('Failed')}>
+          <div class="key-result" class:success={!keySaveError} class:error={keySaveError}>
             {keySaveResult}
           </div>
         {/if}
@@ -1126,6 +1221,11 @@
     cursor: pointer;
     transition: all 0.15s ease;
   }
+  .save-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+    border-color: rgba(59,130,246,0.5);
+  }
 
   .save-btn:hover {
     background: rgba(59,130,246,0.2);
@@ -1439,11 +1539,60 @@
   .add-key-form {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     padding: 8px;
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 6px;
+  }
+  .ak-label {
+    font-size: 0.65rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .ak-label:first-child {
+    margin-top: 0;
+  }
+  .ak-label-error {
+    color: #ef4444;
+  }
+  .required {
+    color: #ef4444;
+    font-weight: 600;
+  }
+  .optional {
+    color: #475569;
+    font-weight: 400;
+    font-style: italic;
+  }
+  .ak-select {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 0.7rem;
+    color: #e2e8f0;
+    font-family: inherit;
+    cursor: pointer;
+    appearance: auto;
+    -webkit-appearance: auto;
+    -moz-appearance: auto;
+  }
+  .ak-select optgroup {
+    background: #1a1a2e;
+    color: #94a3b8;
+    font-size: 0.65rem;
+    font-style: normal;
+    padding: 4px 0;
+  }
+  .ak-select option {
+    background: #1a1a2e;
+    color: #e2e8f0;
+    font-size: 0.7rem;
+    padding: 4px 8px;
   }
   .ak-input {
     background: rgba(0,0,0,0.25);
@@ -1453,22 +1602,42 @@
     font-size: 0.7rem;
     color: #e2e8f0;
     font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .ak-input:focus,
+  .ak-select:focus {
+    outline: none;
+    border-color: rgba(59,130,246,0.5);
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+  }
+  .ak-input-error {
+    border-color: rgba(239,68,68,0.5) !important;
+    box-shadow: 0 0 0 2px rgba(239,68,68,0.15) !important;
   }
   .ak-input::placeholder {
     color: #475569;
   }
+  .field-error {
+    font-size: 0.6rem;
+    color: #ef4444;
+    margin-top: -2px;
+    padding-left: 4px;
+  }
   .key-result {
     font-size: 0.65rem;
-    padding: 4px 8px;
+    padding: 5px 8px;
     border-radius: 4px;
+    font-weight: 500;
   }
   .key-result.success {
     color: #34d399;
     background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.2);
   }
   .key-result.error {
     color: #ef4444;
     background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.2);
   }
   .key-list {
     display: flex;
