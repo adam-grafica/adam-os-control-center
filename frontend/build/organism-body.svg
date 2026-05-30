@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 480" width="240" height="480">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(59,130,246,0.12)"/>
+      <stop offset="50%" stop-color="rgba(168,85,247,0.06)"/>
+      <stop offset="100%" stop-color="rgba(59,130,246,0.08)"/>
+    </linearGradient>
+  </defs>
+  <!-- Head -->
+  <ellipse cx="120" cy="30" rx="32" ry="28" fill="none" stroke="rgba(148,163,184,0.25)" stroke-width="1.5"/>
+  <!-- Eyes -->
+  <circle cx="108" cy="28" r="3" fill="rgba(59,130,246,0.15)"/>
+  <circle cx="132" cy="28" r="3" fill="rgba(59,130,246,0.15)"/>
+  <!-- Neck -->
+  <rect x="110" y="52" width="20" height="18" rx="4" fill="none" stroke="rgba(148,163,184,0.2)" stroke-width="1"/>
+  <!-- Torso -->
+  <path d="M88 70 Q85 160 82 220 Q80 260 90 280 L150 280 Q160 260 158 220 Q155 160 152 70 Z" fill="url(#bodyGrad)" stroke="rgba(148,163,184,0.2)" stroke-width="1.2"/>
+  <!-- Left arm -->
+  <path d="M88 80 Q60 120 52 170 Q48 200 55 220" fill="none" stroke="rgba(148,163,184,0.15)" stroke-width="1.2"/>
+  <!-- Right arm -->
+  <path d="M152 80 Q180 120 188 170 Q192 200 185 220" fill="none" stroke="rgba(148,163,184,0.15)" stroke-width="1.2"/>
+  <!-- Left leg -->
+  <path d="M90 270 Q85 320 80 380 Q78 420 82 450" fill="none" stroke="rgba(148,163,184,0.15)" stroke-width="1.2"/>
+  <!-- Right leg -->
+  <path d="M150 270 Q155 320 160 380 Q162 420 158 450" fill="none" stroke="rgba(148,163,184,0.15)" stroke-width="1.2"/>
+  <!-- Organ positions (reference circles) -->
+  <circle cx="120" cy="40" r="4" fill="none" stroke="rgba(59,130,246,0.08)" stroke-width="0.5"/>
+  <circle cx="120" cy="155" r="4" fill="none" stroke="rgba(59,130,246,0.08)" stroke-width="0.5"/>
+  <circle cx="120" cy="185" r="4" fill="none" stroke="rgba(59,130,246,0.08)" stroke-width="0.5"/>
+  <circle cx="130" cy="230" r="4" fill="none" stroke="rgba(59,130,246,0.08)" stroke-width="0.5"/>
+  <circle cx="110" cy="230" r="4" fill="none" stroke="rgba(59,130,246,0.08)" stroke-width="0.5"/>
+  <circle cx="120" cy="265" r="4" fill="none" stroke="rgba(59,130,246,0.08)" stroke-width="0.5"/>
+  <!-- Energy lines between organs -->
+  <line x1="120" y1="40" x2="120" y2="155" stroke="rgba(59,130,246,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+  <line x1="120" y1="155" x2="120" y2="185" stroke="rgba(59,130,246,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+  <line x1="120" y1="185" x2="130" y2="230" stroke="rgba(59,130,246,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+  <line x1="120" y1="185" x2="110" y2="230" stroke="rgba(59,130,246,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+  <line x1="130" y1="230" x2="120" y2="265" stroke="rgba(59,130,246,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+  <line x1="110" y1="230" x2="120" y2="265" stroke="rgba(59,130,246,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+</svg>

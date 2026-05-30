@@ -1,0 +1,28 @@
+{
+  "refresh_interval_ms": 2000,
+  "thresholds": {
+    "ram_warning": 80,
+    "ram_critical": 90,
+    "cpu_warning": 80,
+    "cpu_critical": 95,
+    "disk_warning": 85,
+    "disk_critical": 95
+  },
+  "ui": {
+    "dark_mode": true,
+    "compact_view": false,
+    "show_timeline": true,
+    "log_level_display": "info"
+  },
+  "security": {
+    "require_auth": false,
+    "allowed_origins": [
+      "*"
+    ],
+    "free_ram_enabled": false
+  },
+  "streaming": {
+    "sse_heartbeat_interval": 30,
+    "sse_log_interval": 0.5
+  }
+}

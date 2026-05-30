@@ -1,7 +1,29 @@
+# Python
 __pycache__/
 *.pyc
-data/
+*.pyo
 venv/
+.venv/
+*.egg-info/
+
+# Node (keep build/ for deploy)
+node_modules/
+frontend/node_modules/
+frontend/.svelte-kit/
+
+# Data
+data/
+
+# Secrets (.env files — use .env.example or .env.template for sharing)
+.env
+
+# OS
 .DS_Store
-adam-os-system/
-!adam-os-system/.gitignore
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

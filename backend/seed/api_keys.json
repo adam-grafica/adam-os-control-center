@@ -1,0 +1,62 @@
+[
+  {
+    "id": "4dc757ea-aaa1-434d-8fb9-e0116ad91d81",
+    "provider": "nvidia",
+    "tier": "round-robin",
+    "key_alias": "NVIDIA Main",
+    "key_env_var": "NVIDIA_API_KEY",
+    "key_preview": "Qhft",
+    "is_active": true,
+    "position": 0,
+    "last_checked": "2026-05-29T20:38:59.502967+00:00",
+    "last_status": "healthy",
+    "error_message": null,
+    "model": "deepseek-ai/deepseek-v4-flash",
+    "base_url": "https://integrate.api.nvidia.com/v1"
+  },
+  {
+    "id": "f1ff6885-1ba5-45f8-8db5-e2b1d5b6adcf",
+    "provider": "nvidia",
+    "tier": "round-robin",
+    "key_alias": "NVIDIA Round Robin #2",
+    "key_env_var": "NVIDIA_API_KEY_2",
+    "key_preview": "dJF-",
+    "is_active": true,
+    "position": 1,
+    "last_checked": "2026-05-29T20:38:59.985115+00:00",
+    "last_status": "healthy",
+    "error_message": null,
+    "model": "deepseek-ai/deepseek-v4-flash",
+    "base_url": "https://integrate.api.nvidia.com/v1"
+  },
+  {
+    "id": "90e37e25-3f23-4de2-9037-4747204fd6b0",
+    "provider": "mistral",
+    "tier": "fallback",
+    "key_alias": "Mistral Main",
+    "key_env_var": "MISTRAL_API_KEY",
+    "key_preview": "TuLA",
+    "is_active": true,
+    "position": 0,
+    "last_checked": "2026-05-29T20:39:00.347682+00:00",
+    "last_status": "healthy",
+    "error_message": null,
+    "model": "mistral-medium-3-5",
+    "base_url": "https://api.mistral.ai/v1"
+  },
+  {
+    "id": "4c0b8be7-74af-4e13-9a32-a99641c7a579",
+    "provider": "mistral",
+    "tier": "fallback",
+    "key_alias": "Mistral Alt 1",
+    "key_env_var": "MISTRAL_API_KEY_2",
+    "key_preview": "X4SH",
+    "is_active": true,
+    "position": 1,
+    "last_checked": "2026-05-29T20:39:00.716967+00:00",
+    "last_status": "healthy",
+    "error_message": null,
+    "model": "mistral-medium-3-5",
+    "base_url": "https://api.mistral.ai/v1"
+  }
+]
