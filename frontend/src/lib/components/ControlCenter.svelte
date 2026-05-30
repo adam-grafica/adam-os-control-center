@@ -2,7 +2,7 @@
   /**
    * ControlCenter.svelte — Left rail navigation with tabs/sidebar.
    */
-  type Tab = 'kanban' | 'files' | 'config' | 'providers' | 'emergency';
+  type Tab = 'kanban' | 'files' | 'config' | 'providers' | 'tokens' | 'keys' | 'emergency';
 
   let activeTab: Tab = $state('kanban');
   let showingConfirm = $state<string | null>(null);
@@ -13,6 +13,8 @@
     { id: 'files', label: 'Files', icon: '📁' },
     { id: 'config', label: 'Config', icon: '⚙️' },
     { id: 'providers', label: 'APIs', icon: '🔌' },
+    { id: 'tokens', label: 'Tokens', icon: '💰' },
+    { id: 'keys', label: 'Keys', icon: '🔑' },
     { id: 'emergency', label: 'Emergency', icon: '🆘' },
   ];
 
@@ -202,6 +204,143 @@
     }
     showingConfirm = null;
   }
+
+  // ─── Tokens Logic ───
+  let tokenSummary: any = $state(null);
+  let tokenDaily: any[] = $state([]);
+
+  let dailyMax = $derived(
+    tokenDaily.length > 0
+      ? Math.max(
+          tokenDaily[0].input_tokens || 0,
+          tokenDaily[0].output_tokens || 0,
+          tokenDaily[0].cache_read_tokens || 0,
+          1
+        )
+      : 1
+  );
+
+  function formatTokens(n: number | undefined | null): string {
+    const val = n ?? 0;
+    if (val >= 1_000_000_000) return (val / 1_000_000_000).toFixed(1) + 'B';
+    if (val >= 1_000_000) return (val / 1_000_000).toFixed(1) + 'M';
+    if (val >= 1_000) return (val / 1_000).toFixed(1) + 'K';
+    return String(val);
+  }
+
+  async function loadTokenData() {
+    try {
+      const [summaryRes, dailyRes] = await Promise.all([
+        fetch('/api/tokens/summary'),
+        fetch('/api/tokens/daily?days=1'),
+      ]);
+      if (summaryRes.ok) tokenSummary = await summaryRes.json();
+      if (dailyRes.ok) tokenDaily = await dailyRes.json();
+    } catch (e) {
+      console.error('Failed to load token data', e);
+    }
+  }
+
+  $effect(() => {
+    if (activeTab === 'tokens') loadTokenData();
+  });
+
+  // ─── Keys Logic ───
+  let apiKeys: any[] = $state([]);
+  let showAddKey = $state(false);
+  let newKeyProvider = $state('');
+  let newKeyValue = $state('');
+  let newKeyLabel = $state('');
+  let keySaveResult = $state<string | null>(null);
+
+  async function loadKeys() {
+    try {
+      const res = await fetch('/api/keys');
+      if (res.ok) apiKeys = await res.json();
+    } catch (e) {
+      console.error('Failed to load API keys', e);
+    }
+  }
+
+  async function saveKey() {
+    if (!newKeyProvider.trim() || !newKeyValue.trim()) {
+      keySaveResult = 'Error: Provider and Key are required';
+      return;
+    }
+    try {
+      const res = await fetch('/api/keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: newKeyProvider.trim(),
+          key: newKeyValue.trim(),
+          label: newKeyLabel.trim() || undefined,
+        }),
+      });
+      if (res.ok) {
+        keySaveResult = '✓ Key saved successfully!';
+        newKeyProvider = '';
+        newKeyValue = '';
+        newKeyLabel = '';
+        showAddKey = false;
+        loadKeys();
+      } else {
+        const err = await res.json();
+        keySaveResult = `Error: ${err.detail || res.statusText}`;
+      }
+    } catch (e: any) {
+      keySaveResult = `Failed: ${e.message}`;
+    }
+    setTimeout(() => { keySaveResult = null; }, 4000);
+  }
+
+  async function testKey(keyId: string) {
+    try {
+      const res = await fetch(`/api/keys/test/${keyId}`, { method: 'POST' });
+      const data = await res.json();
+      keySaveResult = data.success
+        ? `✓ ${keyId.slice(0, 8)}: ${data.latency_ms}ms — ${data.model}`
+        : `✗ ${keyId.slice(0, 8)}: ${data.error || 'Failed'}`;
+      loadKeys();
+    } catch (e: any) {
+      keySaveResult = `Error testing key: ${e.message}`;
+    }
+    setTimeout(() => { keySaveResult = null; }, 5000);
+  }
+
+  async function testAllKeys() {
+    keySaveResult = 'Testing all keys...';
+    try {
+      const res = await fetch('/api/keys/test-all', { method: 'POST' });
+      const data = await res.json();
+      const total = data.results?.length || 0;
+      const ok = data.results?.filter((r: any) => r.success).length || 0;
+      keySaveResult = `✓ ${ok}/${total} keys healthy`;
+      loadKeys();
+    } catch (e: any) {
+      keySaveResult = `Error: ${e.message}`;
+    }
+    setTimeout(() => { keySaveResult = null; }, 5000);
+  }
+
+  async function deleteKey(keyId: string) {
+    try {
+      const res = await fetch(`/api/keys/${keyId}`, { method: 'DELETE' });
+      if (res.ok) {
+        keySaveResult = '✓ Key deleted';
+        loadKeys();
+      } else {
+        keySaveResult = 'Error deleting key';
+      }
+    } catch (e: any) {
+      keySaveResult = `Failed: ${e.message}`;
+    }
+    setTimeout(() => { keySaveResult = null; }, 4000);
+  }
+
+  $effect(() => {
+    if (activeTab === 'keys') loadKeys();
+  });
 </script>
 
 <div class="control-center">
@@ -414,6 +553,185 @@
           </div>
         {/if}
       </div>
+
+    {:else if activeTab === 'tokens'}
+      <!-- ═══ TOKENS CONSUMPTION ═══ -->
+      <div class="tokens-panel">
+        <h3 class="tab-title">💰 Token Consumption</h3>
+        <div class="tokens-content">
+          {#if tokenSummary}
+            <div class="token-grid">
+              <div class="token-card total">
+                <span class="token-label">Total All-Time</span>
+                <span class="token-value">{formatTokens(tokenSummary.all_time.total_tokens)}</span>
+              </div>
+              <div class="token-card input">
+                <span class="token-label">Input</span>
+                <span class="token-value">{formatTokens(tokenSummary.all_time.input_tokens)}</span>
+              </div>
+              <div class="token-card output">
+                <span class="token-label">Output</span>
+                <span class="token-value">{formatTokens(tokenSummary.all_time.output_tokens)}</span>
+              </div>
+              <div class="token-card cache">
+                <span class="token-label">Cache Read</span>
+                <span class="token-value">{formatTokens(tokenSummary.all_time.cache_read_tokens)}</span>
+              </div>
+              <div class="token-card sessions">
+                <span class="token-label">Sessions</span>
+                <span class="token-value">{tokenSummary.all_time.total_sessions}</span>
+              </div>
+              <div class="token-card messages">
+                <span class="token-label">Messages</span>
+                <span class="token-value">{tokenSummary.all_time.total_messages}</span>
+              </div>
+              <div class="token-card tools">
+                <span class="token-label">Tool Calls</span>
+                <span class="token-value">{tokenSummary.all_time.total_tool_calls}</span>
+              </div>
+              <div class="token-card cost">
+                <span class="token-label">API Calls</span>
+                <span class="token-value">{tokenSummary.all_time.total_api_calls}</span>
+              </div>
+            </div>
+            <div class="token-daily">
+              <h4>📅 Today's Usage</h4>
+              {#if tokenDaily.length > 0}
+                <div class="daily-bar">
+                  <div class="bar-item">
+                    <span class="bar-label">Input</span>
+                    <div class="bar-track">
+                      <div class="bar-fill input" style="width: {dailyMax > 0 ? (tokenDaily[0].input_tokens / dailyMax * 100) : 0}%"></div>
+                    </div>
+                    <span class="bar-value">{formatTokens(tokenDaily[0].input_tokens)}</span>
+                  </div>
+                  <div class="bar-item">
+                    <span class="bar-label">Output</span>
+                    <div class="bar-track">
+                      <div class="bar-fill output" style="width: {dailyMax > 0 ? (tokenDaily[0].output_tokens / dailyMax * 100) : 0}%"></div>
+                    </div>
+                    <span class="bar-value">{formatTokens(tokenDaily[0].output_tokens)}</span>
+                  </div>
+                  <div class="bar-item">
+                    <span class="bar-label">Cache</span>
+                    <div class="bar-track">
+                      <div class="bar-fill cache" style="width: {dailyMax > 0 ? (tokenDaily[0].cache_read_tokens / dailyMax * 100) : 0}%"></div>
+                    </div>
+                    <span class="bar-value">{formatTokens(tokenDaily[0].cache_read_tokens)}</span>
+                  </div>
+                  <div class="bar-item sessions-line">
+                    <span>⚡ {tokenDaily[0].session_count} sessions today</span>
+                  </div>
+                </div>
+              {:else}
+                <div class="empty-state">No data for today</div>
+              {/if}
+            </div>
+            <div class="token-live">
+              <h4>🔴 Live Session</h4>
+              {#if tokenSummary.live_session}
+                <div class="live-card">
+                  <div class="live-row">
+                    <span class="live-key">Model</span>
+                    <span class="live-val">{tokenSummary.live_session.model || 'N/A'}</span>
+                  </div>
+                  <div class="live-row">
+                    <span class="live-key">Provider</span>
+                    <span class="live-val">{tokenSummary.live_session.billing_provider || 'N/A'}</span>
+                  </div>
+                  <div class="live-row">
+                    <span class="live-key">Messages</span>
+                    <span class="live-val">{tokenSummary.live_session.message_count}</span>
+                  </div>
+                  <div class="live-row">
+                    <span class="live-key">Tools</span>
+                    <span class="live-val">{tokenSummary.live_session.tool_call_count}</span>
+                  </div>
+                  <div class="live-row">
+                    <span class="live-key">Input Tokens</span>
+                    <span class="live-val">{formatTokens(tokenSummary.live_session.input_tokens)}</span>
+                  </div>
+                  <div class="live-row">
+                    <span class="live-key">Output Tokens</span>
+                    <span class="live-val">{formatTokens(tokenSummary.live_session.output_tokens)}</span>
+                  </div>
+                  <div class="live-row">
+                    <span class="live-key">Cache Read</span>
+                    <span class="live-val">{formatTokens(tokenSummary.live_session.cache_read_tokens)}</span>
+                  </div>
+                  <div class="live-row">
+                    <span class="live-key">Status</span>
+                    <span class="live-val live-active">{tokenSummary.live_session._live ? 'ACTIVE' : 'Ended'}</span>
+                  </div>
+                </div>
+              {:else}
+                <div class="empty-state">No active session</div>
+              {/if}
+            </div>
+          {:else}
+            <div class="loading">Loading token data...</div>
+          {/if}
+        </div>
+      </div>
+
+    {:else if activeTab === 'keys'}
+      <!-- ═══ API KEYS ═══ -->
+      <div class="keys-panel">
+        <h3 class="tab-title">🔑 API Keys</h3>
+        <div class="keys-toolbar">
+          <button class="small-btn" onclick={loadKeys}>🔄 Refresh</button>
+          <button class="small-btn" onclick={() => { showAddKey = !showAddKey; }}>
+            {showAddKey ? '✕ Cancel' : '+ Add Key'}
+          </button>
+          <button class="small-btn" onclick={testAllKeys}>🧪 Test All</button>
+        </div>
+
+        {#if showAddKey}
+          <div class="add-key-form">
+            <input type="text" class="ak-input" placeholder="Provider (e.g. openrouter, anthropic)" bind:value={newKeyProvider} />
+            <input type="password" class="ak-input" placeholder="API Key" bind:value={newKeyValue} />
+            <input type="text" class="ak-input" placeholder="Label (optional)" bind:value={newKeyLabel} />
+            <button class="save-btn" onclick={saveKey}>💾 Save Key</button>
+          </div>
+        {/if}
+
+        {#if keySaveResult}
+          <div class="key-result" class:success={keySaveResult.includes('saved') || keySaveResult.includes('deleted')} class:error={keySaveResult.includes('Error') || keySaveResult.includes('Failed')}>
+            {keySaveResult}
+          </div>
+        {/if}
+
+        <div class="key-list">
+          {#if apiKeys.length > 0}
+            {#each apiKeys as key}
+              <div class="key-card" class:healthy={key.status === 'healthy'} class:error-key={key.status === 'error'} class:unknown={!key.status || key.status === 'unknown'}>
+                <div class="key-info">
+                  <div class="key-header">
+                    <span class="key-provider">{key.provider}</span>
+                    <span class="key-label-text">{key.label || key.model || ''}</span>
+                  </div>
+                  <div class="key-meta">
+                    <span class="key-status-badge" class:green={key.status === 'healthy'} class:red={key.status === 'error'} class:gray={!key.status || key.status === 'unknown'}>
+                      {key.status || 'unknown'}
+                    </span>
+                    <span class="key-id">#{key.id?.slice(0, 8)}</span>
+                    {#if key.last_tested}
+                      <span class="key-tested">Tested: {new Date(key.last_tested).toLocaleDateString()}</span>
+                    {/if}
+                  </div>
+                </div>
+                <div class="key-actions">
+                  <button class="tiny-btn" onclick={() => testKey(key.id)}>🧪</button>
+                  <button class="tiny-btn danger" onclick={() => deleteKey(key.id)}>🗑️</button>
+                </div>
+              </div>
+            {/each}
+          {:else}
+            <div class="empty-state">No API keys configured yet. Click "+ Add Key" to add one.</div>
+          {/if}
+        </div>
+      </div>
+
     {/if}
   </div>
 </div>
@@ -967,5 +1285,273 @@
   .confirm-btn.no {
     background: rgba(255,255,255,0.04);
     color: #94a3b8;
+  }
+
+  /* ═══ TOKENS ═══ */
+  .tokens-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .tokens-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .token-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .token-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .token-card.total { border-left: 2px solid #60a5fa; }
+  .token-card.input { border-left: 2px solid #34d399; }
+  .token-card.output { border-left: 2px solid #f59e0b; }
+  .token-card.cache { border-left: 2px solid #a78bfa; }
+  .token-card.sessions { border-left: 2px solid #f472b6; }
+  .token-card.messages { border-left: 2px solid #38bdf8; }
+  .token-card.tools { border-left: 2px solid #fb923c; }
+  .token-card.cost { border-left: 2px solid #e879f9; }
+  .token-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+  }
+  .token-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #e2e8f0;
+  }
+  .token-daily h4,
+  .token-live h4 {
+    margin: 0 0 6px 0;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .daily-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .bar-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .bar-label {
+    width: 40px;
+    font-size: 0.6rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+  }
+  .bar-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    min-width: 2px;
+  }
+  .bar-fill.input { background: #34d399; }
+  .bar-fill.output { background: #f59e0b; }
+  .bar-fill.cache { background: #a78bfa; }
+  .bar-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: #cbd5e1;
+    width: 55px;
+    text-align: right;
+  }
+  .sessions-line {
+    font-size: 0.6rem;
+    color: #64748b;
+    text-align: right;
+  }
+  .live-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .live-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .live-key {
+    font-size: 0.65rem;
+    color: #64748b;
+  }
+  .live-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: #cbd5e1;
+  }
+  .live-active {
+    color: #34d399;
+    font-weight: 600;
+  }
+  .empty-state {
+    color: #475569;
+    font-size: 0.7rem;
+    font-style: italic;
+    padding: 16px 0;
+    text-align: center;
+  }
+  .loading {
+    color: #64748b;
+    font-size: 0.7rem;
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  /* ═══ KEYS ═══ */
+  .keys-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .keys-toolbar {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .add-key-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+  }
+  .ak-input {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 0.7rem;
+    color: #e2e8f0;
+    font-family: inherit;
+  }
+  .ak-input::placeholder {
+    color: #475569;
+  }
+  .key-result {
+    font-size: 0.65rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+  .key-result.success {
+    color: #34d399;
+    background: rgba(52,211,153,0.1);
+  }
+  .key-result.error {
+    color: #ef4444;
+    background: rgba(239,68,68,0.1);
+  }
+  .key-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .key-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    transition: border-color 0.3s;
+  }
+  .key-card.healthy { border-left: 2px solid #34d399; }
+  .key-card.error-key { border-left: 2px solid #ef4444; }
+  .key-card.unknown { border-left: 2px solid #64748b; }
+  .key-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+  .key-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .key-provider {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #e2e8f0;
+  }
+  .key-label-text {
+    font-size: 0.65rem;
+    color: #64748b;
+  }
+  .key-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.6rem;
+  }
+  .key-status-badge {
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.55rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .key-status-badge.green { background: rgba(52,211,153,0.15); color: #34d399; }
+  .key-status-badge.red { background: rgba(239,68,68,0.15); color: #ef4444; }
+  .key-status-badge.gray { background: rgba(100,116,139,0.15); color: #94a3b8; }
+  .key-id {
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+  }
+  .key-tested {
+    color: #64748b;
+  }
+  .key-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .tiny-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    color: #94a3b8;
+    transition: all 0.15s;
+  }
+  .tiny-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: #e2e8f0;
+  }
+  .tiny-btn.danger:hover {
+    background: rgba(239,68,68,0.15);
+    color: #ef4444;
   }
 </style>
