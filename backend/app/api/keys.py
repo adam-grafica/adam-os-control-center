@@ -65,11 +65,16 @@ async def add_key(payload: ApiKeyCreate) -> ApiKeyEntry:
     
     The key value is stored in .env; the registry only stores metadata.
     """
-    if payload.provider not in ("opencode-zen", "nvidia", "mistral"):
+    if payload.provider not in (
+        "opencode-zen", "nvidia", "mistral", "openrouter",
+        "anthropic", "deepseek", "openai", "groq", "google",
+        "gemini", "google-ai-studio",
+    ):
         raise HTTPException(
             status_code=400,
             detail=f"Invalid provider '{payload.provider}'. "
-            f"Valid: opencode-zen, nvidia, mistral",
+            f"Valid: opencode-zen, nvidia, mistral, openrouter, "
+            f"anthropic, deepseek, openai, groq, google, gemini",
         )
     if payload.tier not in ("main", "fallback", "round-robin"):
         raise HTTPException(

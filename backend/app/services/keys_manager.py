@@ -68,7 +68,7 @@ KEYS_DB_PATH = os.path.join(
     "api_keys.json",
 )
 ENV_PATH = os.path.join(
-    settings.ADAM_OS_ROOT, "..", ".env"
+    settings.ADAM_OS_ROOT, ".env"
 )
 HERMES_ENV_PATH = os.path.join(
     "/home/adamcloud/.hermes", ".env"
@@ -120,13 +120,14 @@ def _write_keys_db(keys: List[Dict[str, Any]]) -> None:
 
 
 def _get_env_path() -> str:
-    """Return the .env file path that exists, preferring the Hermes one."""
-    expanded = os.path.expanduser(HERMES_ENV_PATH)
+    """Return the .env file path that exists, preferring /app/data/.env."""
+    expanded = os.path.expanduser(ENV_PATH)
     if os.path.isfile(expanded):
         return expanded
-    expanded2 = os.path.expanduser(ENV_PATH)
-    if os.path.isfile(expanded2):
-        return expanded2
+    hermes = os.path.expanduser(HERMES_ENV_PATH)
+    if os.path.isfile(hermes):
+        return hermes
+    # Fallback: use /app/data/.env (in persistent volume, writable by appuser)
     return expanded
 
 
@@ -206,7 +207,8 @@ def _preview_key(key: str) -> str:
 
 def _generate_env_var(provider: str, position: int) -> str:
     """Generate standard env var name for a key."""
-    prefix = PROVIDER_CONFIG[provider]["env_prefix"]
+    cfg = PROVIDER_CONFIG.get(provider, {})
+    prefix = cfg.get("env_prefix") or f"{provider.upper()}_API_KEY"
     if position == 0:
         return prefix  # First key uses base name
     return f"{prefix}_{position + 1}"

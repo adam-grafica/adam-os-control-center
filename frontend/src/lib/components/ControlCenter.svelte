@@ -316,8 +316,9 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           provider: provider,
-          key: newKeyValue.trim(),
-          label: newKeyLabel.trim() || undefined,
+          tier: 'main',
+          key_value: newKeyValue.trim(),
+          key_alias: newKeyLabel.trim() || provider,
         }),
       });
       if (res.ok) {
@@ -331,7 +332,14 @@
         loadKeys();
       } else {
         const err = await res.json();
-        keySaveResult = `Error: ${err.detail || res.statusText}`;
+        // FastAPI validation errors come as array of objects in err.detail
+        if (Array.isArray(err.detail)) {
+          keySaveResult = 'Error: ' + err.detail
+            .map((d: any) => d.msg || d.message || JSON.stringify(d))
+            .join('; ');
+        } else {
+          keySaveResult = `Error: ${err.detail || res.statusText}`;
+        }
         keySaveError = true;
       }
     } catch (e: any) {
