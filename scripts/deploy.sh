@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ADAM OS Control Center Deploy v2 — with Docker no-cache
+# Usage: bash scripts/deploy.sh
+# Requires: SSH key at ~/ssh-adamcloud.key, .env.caprover with CAPROVER_PASSWORD
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
